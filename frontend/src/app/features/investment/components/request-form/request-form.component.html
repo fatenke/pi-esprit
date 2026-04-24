@@ -1,0 +1,213 @@
+<div *ngIf="isVisible" class="form-overlay">
+  <div class="form-panel">
+    
+    <!-- Header -->
+    <div class="form-header">
+      <div>
+        <h2 class="form-title">
+          {{ formTitle }}
+          <span class="mode-badge"
+                [class.badge-add]="isAddMode"
+                [class.badge-edit]="isEditMode">
+            {{ isAddMode ? 'Nouveau' : 'Modification' }}
+          </span>
+        </h2>
+        <p class="form-sub">
+          {{ isAddMode
+              ? 'Remplissez les informations pour soumettre votre demande'
+              : 'Les champs grisés ne sont pas modifiables' }}
+        </p>
+      </div>
+      <button class="close-btn" (click)="closeForm()">
+        <svg width="14" height="14" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Success Message -->
+    <div *ngIf="submitSuccess" class="success-banner">
+      <svg width="14" height="14" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+      {{ successMessage }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-body">
+
+      <!-- Read-only fields for edit mode -->
+      <ng-container *ngIf="isEditMode && currentRequest">
+        <div class="section-label">INFORMATIONS NON MODIFIABLES</div>
+        <div class="readonly-grid">
+          <div class="readonly-box">
+            <div class="readonly-label">ID DEMANDE</div>
+            <div class="readonly-val">{{ currentRequest.id }}</div>
+          </div>
+          <div class="readonly-box">
+            <div class="readonly-label">DATE D'ENVOI</div>
+            <div class="readonly-val">
+              {{ currentRequest.sentAt | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+          <div class="readonly-box">
+            <div class="readonly-label">ID INVESTISSEUR</div>
+            <div class="readonly-val">{{ currentRequest.investorId }}</div>
+          </div>
+          <div class="readonly-box">
+            <div class="readonly-label">ID STARTUP</div>
+            <div class="readonly-val">{{ currentRequest.startupId }}</div>
+          </div>
+        </div>
+        <div class="form-divider"></div>
+        <div class="section-label">CHAMPS MODIFIABLES</div>
+      </ng-container>
+
+      <!-- Required fields for add mode -->
+      <ng-container *ngIf="isAddMode" >
+        <div class="section-label">INFORMATIONS OBLIGATOIRES</div>
+
+        <div class="field">
+          <label class="field-label" for="investorId">
+            Identifiant investisseur <span class="req">*</span>
+          </label>
+          <p class="field-hint">
+            Identifiant unique de l'investisseur sur la plateforme
+          </p>
+          <input id="investorId" type="text"
+                 formControlName="investorId"
+                 [class.err]="isInvalid('investorId')"
+                 placeholder="ex: INV-2024-001"/>
+          <span *ngIf="isInvalid('investorId')" class="err-msg">
+            {{ getError('investorId') }}
+          </span>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="startupId">
+            Identifiant startup <span class="req">*</span>
+          </label>
+          <p class="field-hint">
+            Identifiant de la startup ciblée par la demande
+          </p>
+          <input id="startupId" type="text"
+                 formControlName="startupId"
+                 [class.err]="isInvalid('startupId')"
+                 placeholder="ex: START-AGRI-07"/>
+          <span *ngIf="isInvalid('startupId')" class="err-msg">
+            {{ getError('startupId') }}
+          </span>
+        </div>
+
+        <div class="form-divider"></div>
+        <div class="section-label">INFORMATIONS OPTIONNELLES</div>
+      </ng-container>
+
+      <!-- Common fields for both modes -->
+      <div>
+
+        <!-- introMessage -->
+        <div class="field">
+          <label class="field-label" for="introMessage">
+            Message d'introduction
+          </label>
+          <p class="field-hint">
+            Présentez votre démarche à la startup (20 – 500 caractères)
+          </p>
+          <textarea id="introMessage"
+          formControlName="introMessage"
+          [class.err]="isInvalid('introMessage')"
+          rows="4"
+          placeholder="Présentez-vous et expliquez votre intérêt..."></textarea>
+          <div class="char-row">
+            <span class="char-count"
+                  [class.near]="charCount > 400"
+                  [class.over]="charCount > 500">
+              {{ charCount }} / 500
+            </span>
+          </div>
+          <span *ngIf="isInvalid('introMessage')" class="err-msg">
+            {{ getError('introMessage') }}
+          </span>
+        </div>
+
+        <!-- ticketProposed -->
+        <div class="field">
+          <label class="field-label" for="ticketProposed">
+            Ticket d'investissement envisagé
+          </label>
+          <p class="field-hint">
+            Montant envisagé en TND — visible uniquement par la startup
+          </p>
+          <div class="input-unit">
+            <input id="ticketProposed" type="number"
+                   formControlName="ticketProposed"
+                   [class.err]="isInvalid('ticketProposed')"
+                   placeholder="ex: 150000" min="1"/>
+            <span class="unit-label">TND</span>
+          </div>
+          <span *ngIf="isInvalid('ticketProposed')" class="err-msg">
+            {{ getError('ticketProposed') }}
+          </span>
+        </div>
+
+        <!-- PDF upload -->
+        <div class="field">
+          <label class="field-label">Document de présentation (PDF)</label>
+          <p class="field-hint">
+            {{ isEditMode
+                ? 'Cliquer pour remplacer le document existant (optionnel)'
+                : 'Portfolio ou track record — format PDF, max 5 MB' }}
+          </p>
+
+          <div *ngIf="!selectedFile"
+               class="file-zone"
+               (click)="fileInput.click()">
+            <input #fileInput type="file" accept=".pdf"
+                   style="display:none"
+                   (change)="onFileSelected($event)"/>
+            <svg width="20" height="20" viewBox="0 0 24 24"
+                 fill="none" stroke="#888780" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div class="file-zone-text">
+              {{ isEditMode
+                  ? 'Cliquer pour remplacer le PDF actuel'
+                  : 'Cliquer pour sélectionner un PDF' }}
+            </div>
+            <div class="file-zone-sub">Format PDF uniquement — max 5 MB</div>
+          </div>
+
+          <div *ngIf="selectedFile" class="file-chosen">
+            <span class="file-tag">PDF</span>
+            <span class="file-name">{{ selectedFile.name }}</span>
+            <span class="file-size">
+              {{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB
+            </span>
+            <button type="button" class="file-remove" (click)="removeFile()">
+              Retirer
+            </button>
+          </div>
+
+          <span *ngIf="fileError" class="err-msg">{{ fileError }}</span>
+        </div>
+
+      </div>
+    <!-- Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel" (click)="closeForm()">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-submit"
+          [disabled]="isSubmitting">
+          {{ submitLabel }}
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>

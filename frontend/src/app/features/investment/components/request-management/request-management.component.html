@@ -1,0 +1,149 @@
+<div class="page">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Request Inbox</div>
+      <h1 class="page-title">Demandes d'interet recues</h1>
+      <p class="page-sub">
+        Les plus recentes remontent en haut. Filtre rapidement les demandes et traite-les sans perdre le contexte.
+      </p>
+    </div>
+    <div class="hero-badge">{{ filteredRequests.length }} visibles</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-label">Total</span>
+      <strong class="stat-value">{{ requests.length }}</strong>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">En attente</span>
+      <strong class="stat-value">{{ pendingCount }}</strong>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Acceptees</span>
+      <strong class="stat-value">{{ acceptedCount }}</strong>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Refusees</span>
+      <strong class="stat-value">{{ rejectedCount }}</strong>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <label class="search-box">
+      <span class="search-label">Recherche</span>
+      <input
+        type="text"
+        [(ngModel)]="query"
+        placeholder="Investor, startup, message..."
+      />
+    </label>
+
+    <div class="filters">
+      <button
+        *ngFor="let filter of statusFilters"
+        type="button"
+        class="filter-chip"
+        [class.active]="selectedStatus === filter.value"
+        (click)="setStatusFilter(filter.value)"
+      >
+        {{ filter.label }}
+      </button>
+    </div>
+
+    <button type="button" class="clear-btn" (click)="clearFilters()">
+      Reset
+    </button>
+  </div>
+
+  <div *ngIf="filteredRequests.length === 0" class="empty-state">
+    <div class="empty-title">Aucune demande correspondante</div>
+    <div class="empty-sub">
+      Essaie de modifier les filtres ou la recherche pour retrouver une demande.
+    </div>
+  </div>
+
+  <div class="requests-list" *ngIf="filteredRequests.length > 0">
+    <article
+      *ngFor="let req of filteredRequests; trackBy: trackById"
+      class="req-card"
+      [attr.data-status]="req.investmentStatus"
+    >
+      <div class="card-top">
+        <div class="identity">
+          <div class="avatar">{{ getInitials(req.investorId) }}</div>
+          <div>
+            <div class="identity-title">{{ req.investorId }}</div>
+            <div class="identity-sub">Startup cible: {{ req.startupId }}</div>
+          </div>
+        </div>
+
+        <div class="card-top-right">
+          <span class="status-badge" [attr.data-status]="req.investmentStatus">
+            {{ getStatusLabel(req.investmentStatus) }}
+          </span>
+          <span class="date-pill">{{ req.sentAt | date:'dd MMM yyyy, HH:mm' }}</span>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div class="content-box">
+          <div class="box-label">Ticket propose</div>
+          <div class="box-value">
+            {{ req.ticketProposed ? (req.ticketProposed | number) + ' TND' : 'Non precise' }}
+          </div>
+        </div>
+        <div class="content-box">
+          <div class="box-label">Document</div>
+          <div class="box-value">
+            {{ req.investorDocUrl ? 'Disponible' : 'Aucun document joint' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="message-block">
+        <div class="box-label">Message de l'investisseur</div>
+        <div class="message-text">
+          {{ req.introMessage || 'Aucun message fourni.' }}
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="footer-left">
+          <button
+            *ngIf="req.investorDocUrl"
+            type="button"
+            class="btn btn-secondary"
+            (click)="download(req)"
+          >
+            Voir le document
+          </button>
+          <span *ngIf="!req.investorDocUrl" class="muted-note">Aucun document joint</span>
+        </div>
+
+        <div class="footer-right">
+          <button
+            *ngIf="req.investmentStatus === 'ACCEPTED'"
+            type="button"
+            class="btn btn-info"
+            (click)="viewInKanban(req.id)"
+          >
+            Voir dans Kanban
+          </button>
+
+          <ng-container *ngIf="req.investmentStatus === 'PENDING'">
+            <button type="button" class="btn btn-secondary" (click)="update(req.id)">
+              Modifier
+            </button>
+            <button type="button" class="btn btn-danger" (click)="reject(req.id)">
+              Refuser
+            </button>
+            <button type="button" class="btn btn-success" (click)="accept(req.id)">
+              Accepter
+            </button>
+          </ng-container>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>

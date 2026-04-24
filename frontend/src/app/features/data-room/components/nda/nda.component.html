@@ -1,0 +1,31 @@
+<mat-card class="nda-card">
+  <mat-card-header>
+    <mat-card-title>Non-Disclosure Agreement</mat-card-title>
+    <mat-card-subtitle>Data room access requires a signed NDA</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <p class="lead">
+      By signing, you agree to keep all materials in this data room confidential and to use them
+      solely for evaluating a potential investment. Do not copy, distribute, or disclose documents
+      without prior written consent.
+    </p>
+    <p>
+      After signing, you will be able to browse folders, view and download documents, and your
+      document views may be logged for compliance.
+    </p>
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      [disabled]="busy"
+      (click)="sign.emit()"
+    >
+      <mat-icon>draw</mat-icon>
+      Sign NDA
+    </button>
+  </mat-card-actions>
+</mat-card>

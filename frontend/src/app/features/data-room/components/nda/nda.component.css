@@ -1,0 +1,15 @@
+.nda-card {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.lead {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-top: 0;
+}
+
+mat-card-actions button mat-icon {
+  margin-right: 6px;
+  vertical-align: middle;
+}

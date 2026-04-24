@@ -1,0 +1,261 @@
+<div class="holding-page">
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">Investment Holding</div>
+      <h1>Secure investment holding</h1>
+      <p *ngIf="request">
+        Request {{ request.id }} for {{ startupName }} in {{ startupSector }}.
+      </p>
+
+      <div class="hero-badges" *ngIf="request">
+        <span class="hero-badge">{{ startupSector }}</span>
+        <span class="hero-badge">Investor {{ request.investorId }}</span>
+        <span class="hero-badge" *ngIf="holding">{{ holding.status }}</span>
+      </div>
+    </div>
+
+    <div class="actor-panel">
+      <div class="actor-title">Workspace actor</div>
+      <label>
+        <span>Role</span>
+        <select [(ngModel)]="selectedRole" (ngModelChange)="onRoleChange($event)">
+          <option *ngFor="let role of roles" [ngValue]="role">{{ role }}</option>
+        </select>
+      </label>
+      <label>
+        <span>User id</span>
+        <input [(ngModel)]="currentUserId" />
+      </label>
+    </div>
+  </div>
+
+  <div class="state loading" *ngIf="loading">Loading holding workspace...</div>
+  <div class="state error" *ngIf="!loading && error">{{ error }}</div>
+  <div class="state success" *ngIf="!loading && message">{{ message }}</div>
+
+  <ng-container *ngIf="!loading && request">
+    <div class="summary-grid">
+      <article class="summary-card">
+        <span class="label">Investor</span>
+        <strong>{{ request.investorId }}</strong>
+        <small>Linked user controlling the funding side</small>
+      </article>
+      <article class="summary-card">
+        <span class="label">Startup</span>
+        <strong>{{ startupName }}</strong>
+        <small>{{ startupSector }} company profile</small>
+      </article>
+      <article class="summary-card">
+        <span class="label">Suggested ticket</span>
+        <strong>{{ request.ticketProposed ? (request.ticketProposed | number) + ' TND' : 'N/A' }}</strong>
+        <small>Initial amount proposed in the request</small>
+      </article>
+      <article class="summary-card" *ngIf="holding">
+        <span class="label">Holding status</span>
+        <strong>{{ holding.status }}</strong>
+        <small>Current escrow-like state of the transaction</small>
+      </article>
+    </div>
+
+    <section class="panel" *ngIf="!holding">
+      <div class="panel-head">
+        <div>
+          <h2>Create holding</h2>
+          <p>Create a Stripe test payment intent and lock the investment logically.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Amount</span>
+          <input type="number" [(ngModel)]="createHoldingForm.amount" min="1" />
+        </label>
+        <label>
+          <span>Currency</span>
+          <input [(ngModel)]="createHoldingForm.currency" placeholder="usd" />
+        </label>
+      </div>
+
+      <button class="primary-btn wide" (click)="createHolding()" [disabled]="!canCreateHolding || actionBusy">
+        Create Stripe test holding
+      </button>
+    </section>
+
+    <ng-container *ngIf="holding">
+      <div class="holding-layout">
+        <section class="panel overview-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Holding overview</h2>
+              <p>Amount, current state, Stripe test references, and milestone payment lifecycle.</p>
+            </div>
+            <span class="status-pill" [attr.data-status]="holding.status">{{ holding.status }}</span>
+          </div>
+
+          <div class="details-grid">
+            <div class="detail-card emphasis">
+              <span class="label">Amount</span>
+              <strong>{{ holding.amount | number }} {{ holding.currency | uppercase }}</strong>
+              <small>Locked through Stripe test mode only</small>
+            </div>
+            <div class="detail-card">
+              <span class="label">Investor</span>
+              <strong>{{ holding.investorId }}</strong>
+              <small>Authorized to pay and open disputes</small>
+            </div>
+            <div class="detail-card">
+              <span class="label">Startup</span>
+              <strong>{{ holding.startupId }}</strong>
+              <small>Can request fund release after validation</small>
+            </div>
+            <div class="detail-card">
+              <span class="label">Payment intent</span>
+              <strong>{{ holding.stripePaymentIntentId || 'N/A' }}</strong>
+              <small>Stripe test reference stored on the platform</small>
+            </div>
+          </div>
+
+          <div class="timeline-panel">
+            <div class="timeline-head">
+              <h3>Release journey</h3>
+              <span>Escrow simulation until admin release</span>
+            </div>
+            <div class="timeline">
+              <div
+                *ngFor="let step of timeline"
+                class="timeline-step"
+                [attr.data-state]="timelineState(step)"
+              >
+                <div class="timeline-line"></div>
+                <div class="timeline-dot"></div>
+                <span>{{ step }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="side-stack">
+          <section class="panel action-panel" *ngIf="canPay">
+            <div class="panel-head">
+              <div>
+                <h2>Stripe test payment</h2>
+                <p>Use Stripe test cards only. No real money is transferred.</p>
+              </div>
+            </div>
+
+            <div class="payment-callout">
+              <div class="payment-icon">S</div>
+              <div>
+                <strong>Sandbox payment only</strong>
+                <p>Confirm the PaymentIntent in test mode before funds become held.</p>
+              </div>
+            </div>
+
+            <div #paymentElementHost class="payment-element-shell"></div>
+            <button class="primary-btn wide" (click)="payWithStripe()" [disabled]="actionBusy || !stripePublicKey">
+              Pay with Stripe test mode
+            </button>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Holding actions</h2>
+                <p>Available actions depend on the selected actor role.</p>
+              </div>
+            </div>
+
+            <div class="action-grid">
+              <button class="ghost-btn" (click)="openDispute()" [disabled]="!canOpenDispute || actionBusy">
+                Open dispute
+              </button>
+              <button class="ghost-btn" (click)="requestRelease()" [disabled]="!canRequestRelease || actionBusy">
+                Request release
+              </button>
+              <button class="ghost-btn" (click)="adminRelease()" [disabled]="!canAdminRelease || actionBusy">
+                Admin release
+              </button>
+              <button class="ghost-btn danger" (click)="adminRefund()" [disabled]="!canAdminRefund || actionBusy">
+                Mark refunded
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Milestone payment</h2>
+            <p>Split the holding into validated and releasable milestones.</p>
+          </div>
+        </div>
+
+        <div class="form-grid" *ngIf="canCreateMilestone">
+          <label>
+            <span>Title</span>
+            <input [(ngModel)]="milestoneForm.title" placeholder="Prototype delivery" />
+          </label>
+          <label>
+            <span>Amount</span>
+            <input type="number" [(ngModel)]="milestoneForm.amount" min="1" />
+          </label>
+          <label class="full">
+            <span>Due date and time</span>
+            <input type="datetime-local" [(ngModel)]="milestoneForm.dueDate" />
+          </label>
+        </div>
+
+        <button
+          *ngIf="canCreateMilestone"
+          class="primary-btn secondary"
+          (click)="createMilestone()"
+          [disabled]="actionBusy"
+        >
+          Add milestone
+        </button>
+
+        <div class="milestone-list" *ngIf="holding.milestones.length > 0; else noMilestones">
+          <article class="milestone-card" *ngFor="let milestone of holding.milestones">
+            <div class="milestone-top">
+              <div>
+                <h3>{{ milestone.title }}</h3>
+                <p>{{ milestone.amount | number }} {{ holding.currency | uppercase }} | {{ milestone.dueDate | date:'dd MMM yyyy, HH:mm' }}</p>
+              </div>
+              <span class="status-pill" [attr.data-status]="milestone.status">{{ milestone.status }}</span>
+            </div>
+
+            <div class="validation-row">
+              <span>Investor validated: <strong>{{ milestone.validatedByInvestor ? 'Yes' : 'No' }}</strong></span>
+              <span>Startup validated: <strong>{{ milestone.validatedByStartup ? 'Yes' : 'No' }}</strong></span>
+            </div>
+
+            <div class="action-row">
+              <button
+                class="ghost-btn"
+                (click)="validateMilestone(milestone)"
+                [disabled]="actionBusy || milestone.status === 'RELEASED' || milestone.status === 'BLOCKED'"
+              >
+                Validate as {{ selectedRole }}
+              </button>
+              <button
+                class="ghost-btn"
+                (click)="releaseMilestone(milestone)"
+                [disabled]="actionBusy || selectedRole !== 'ADMIN' || milestone.status !== 'VALIDATED'"
+              >
+                Admin release milestone
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noMilestones>
+          <div class="empty-box">No milestones yet for this holding.</div>
+        </ng-template>
+      </section>
+    </ng-container>
+  </ng-container>
+</div>

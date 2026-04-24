@@ -1,0 +1,38 @@
+package tn.esprit.backend.Entities;
+
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+
+@Document(collection = "deal_pipeline")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+public class DealPipeline {
+    @Id
+    private String id;
+    private String investorId;
+    //@Indexed(unique = true)
+    private String requestId;       // InvestmentRequest
+    private String startupId;
+    private DealStatus status;
+    private int columnOrder;         // position dans la colonne
+    private List<PipelineNote> privateNotes;
+    //private List<SharedDocument> documents;
+    private String nextAction;
+    private LocalDateTime nextActionDate;
+    private LocalDateTime statusChangedAt;
+    private List<StatusHistory> history;
+    public long getDaysInCurrentStatus() {
+        return ChronoUnit.DAYS.between(statusChangedAt, LocalDateTime.now());
+    }
+}

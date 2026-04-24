@@ -1,0 +1,15 @@
+<nav class="folder-nav" aria-label="Data room folders">
+  <div class="heading">Folders</div>
+  <mat-nav-list>
+    <button
+      mat-list-item
+      type="button"
+      *ngFor="let f of folders"
+      [class.is-selected]="selected === f"
+      (click)="select(f)"
+    >
+      <span matListItemTitle>{{ labels[f] }}</span>
+      <span matListItemMeta class="badge">{{ countFor(f) }}</span>
+    </button>
+  </mat-nav-list>
+</nav>

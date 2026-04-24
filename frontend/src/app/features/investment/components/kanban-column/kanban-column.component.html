@@ -1,0 +1,21 @@
+<section class="column" [attr.data-status]="status">
+  <header class="column-header">
+    <div class="title">{{ title }}</div>
+    <div class="count">{{ cards.length }}</div>
+  </header>
+
+  <div
+    class="dropzone"
+    cdkDropList
+    [id]="dropListId"
+    [cdkDropListData]="cards"
+    [cdkDropListConnectedTo]="connectedToIds"
+    (cdkDropListDropped)="onDropped($event)"
+  >
+    <div class="empty" *ngIf="cards.length === 0">No deals</div>
+
+    <div class="card-wrapper" *ngFor="let card of cards; trackBy: trackById" cdkDrag [cdkDragData]="card">
+      <app-deal-card [card]="card"></app-deal-card>
+    </div>
+  </div>
+</section>

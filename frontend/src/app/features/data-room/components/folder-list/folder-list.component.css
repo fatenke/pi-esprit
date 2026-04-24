@@ -1,0 +1,27 @@
+.folder-nav {
+  min-width: 200px;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  padding-right: 8px;
+}
+
+.heading {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+  padding: 8px 16px 4px;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+a.is-selected {
+  background: rgba(63, 81, 181, 0.12);
+  border-radius: 8px;
+}

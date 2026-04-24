@@ -1,0 +1,135 @@
+<div class="page">
+  <div class="header">
+    <h2>Investment Criteria</h2>
+    <p class="sub">Create a profile of what you’re looking to invest in.</p>
+  </div>
+
+  <form class="card" (ngSubmit)="submit()">
+    <div class="grid">
+      <div class="field">
+        <label for="investorId">Investor ID</label>
+        <input
+          id="investorId"
+          type="text"
+          [(ngModel)]="criteria.investorId"
+          name="investorId"
+          placeholder="e.g. INV-001"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="location">Location</label>
+        <input
+          id="location"
+          type="text"
+          [(ngModel)]="criteria.location"
+          name="location"
+          placeholder="e.g. Europe, MENA, Remote"
+        />
+      </div>
+
+      <div class="field">
+        <label for="minBudget">Min budget</label>
+        <input
+          id="minBudget"
+          type="number"
+          min="0"
+          [(ngModel)]="criteria.minBudget"
+          name="minBudget"
+          placeholder="0"
+        />
+      </div>
+
+      <div class="field">
+        <label for="maxBudget">Max budget</label>
+        <input
+          id="maxBudget"
+          type="number"
+          min="0"
+          [(ngModel)]="criteria.maxBudget"
+          name="maxBudget"
+          placeholder="0"
+        />
+      </div>
+
+      <div class="field full">
+        <label>Sectors</label>
+        <div class="chipRow">
+          <input
+            type="text"
+            [(ngModel)]="sectorDraft"
+            name="sectorDraft"
+            placeholder="Type a sector and press Add"
+            (keydown.enter)="$event.preventDefault(); addSector()"
+          />
+          <button type="button" class="btn secondary" (click)="addSector()">Add</button>
+        </div>
+        <div class="suggestions" *ngIf="filteredSectorSuggestions.length > 0">
+          <button
+            type="button"
+            class="suggestion"
+            *ngFor="let s of filteredSectorSuggestions"
+            (click)="selectSectorSuggestion(s)"
+          >
+            {{ s }}
+          </button>
+        </div>
+        <div class="chips" *ngIf="criteria.sectors.length > 0">
+          <button
+            type="button"
+            class="chip"
+            *ngFor="let s of criteria.sectors"
+            (click)="removeSector(s)"
+            title="Remove"
+          >
+            <span class="chipText">{{ s }}</span>
+            <span class="chipX">×</span>
+          </button>
+        </div>
+        <p class="hint" *ngIf="criteria.sectors.length === 0">No sectors added yet.</p>
+      </div>
+
+      <div class="field full">
+        <label>Stages</label>
+        <div class="chipRow">
+          <input
+            type="text"
+            [(ngModel)]="stageDraft"
+            name="stageDraft"
+            placeholder="Type a stage (Seed, Series A, ...) and press Add"
+            (keydown.enter)="$event.preventDefault(); addStage()"
+          />
+          <button type="button" class="btn secondary" (click)="addStage()">Add</button>
+        </div>
+        <div class="suggestions" *ngIf="filteredStageSuggestions.length > 0">
+          <button
+            type="button"
+            class="suggestion"
+            *ngFor="let s of filteredStageSuggestions"
+            (click)="selectStageSuggestion(s)"
+          >
+            {{ s }}
+          </button>
+        </div>
+        <div class="chips" *ngIf="criteria.stages.length > 0">
+          <button
+            type="button"
+            class="chip"
+            *ngFor="let s of criteria.stages"
+            (click)="removeStage(s)"
+            title="Remove"
+          >
+            <span class="chipText">{{ s }}</span>
+            <span class="chipX">×</span>
+          </button>
+        </div>
+        <p class="hint" *ngIf="criteria.stages.length === 0">No stages added yet.</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn primary">Save criteria</button>
+    </div>
+  </form>
+</div>
