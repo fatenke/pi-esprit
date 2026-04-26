@@ -1,16 +1,16 @@
 <div class="kanban-page">
   <div class="header">
     <div>
-      <div class="title">Deal pipeline</div>
-      <div class="subtitle">Drag cards to update status and ordering.</div>
+      <div class="title">Pipeline des deals</div>
+      <div class="subtitle">Glisse les cartes pour mettre a jour le statut et l ordre.</div>
     </div>
 
     <button mat-stroked-button (click)="loadBoard()" [disabled]="loading">
-      Reload
+      Recharger
     </button>
   </div>
 
-  <div class="state" *ngIf="loading">Loading…</div>
+  <div class="state" *ngIf="loading">Chargement...</div>
   <div class="state error" *ngIf="!loading && error">{{ error }}</div>
 
   <div class="board" *ngIf="!loading">

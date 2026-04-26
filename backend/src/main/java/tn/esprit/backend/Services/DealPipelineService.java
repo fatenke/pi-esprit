@@ -30,6 +30,7 @@ public class DealPipelineService {
         STATUS_STAGE.put(DealStatus.CONTACTED, 1);
         STATUS_STAGE.put(DealStatus.NEGOTIATION, 2);
         STATUS_STAGE.put(DealStatus.DUE_DILIGENCE, 3);
+        STATUS_STAGE.put(DealStatus.VERIFICATION_FINALE, 3);
         STATUS_STAGE.put(DealStatus.CLOSED, 4);
         STATUS_STAGE.put(DealStatus.REJECTED, 4);
         STATUS_STAGE.put(DealStatus.ACCEPTED, 1);
@@ -51,7 +52,7 @@ public class DealPipelineService {
         card.setId(deal.getId());
         card.setStartupId(deal.getStartupId());
         card.setRequestId(deal.getRequestId());
-        card.setStatus(deal.getStatus().name());
+        card.setStatus(normalizeDisplayStatus(deal.getStatus()).name());
         card.setColumnOrder(deal.getColumnOrder());
         card.setTicketProposed(ticketProposed);
         card.setLastStatusChangeAt(deal.getStatusChangedAt());
@@ -71,7 +72,7 @@ public class DealPipelineService {
 
         Map<DealStatus, List<DealCard>> columns = deals.stream()
                 .collect(Collectors.groupingBy(
-                        DealPipeline::getStatus,
+                        deal -> normalizeDisplayStatus(deal.getStatus()),
                         Collectors.mapping(this::toDealCard, Collectors.toList())
                 ));
 
@@ -132,5 +133,12 @@ public class DealPipelineService {
         investmentRequestService.syncStatus(deal.getRequestId(), newStatus);
 
         return dealPipelineRepo.save(deal);
+    }
+
+    private DealStatus normalizeDisplayStatus(DealStatus status) {
+        if (status == DealStatus.VERIFICATION_FINALE) {
+            return DealStatus.DUE_DILIGENCE;
+        }
+        return status;
     }
 }

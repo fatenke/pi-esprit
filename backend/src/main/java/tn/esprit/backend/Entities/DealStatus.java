@@ -6,6 +6,7 @@ public enum DealStatus {
     CONTACTED,
     NEGOTIATION,
     DUE_DILIGENCE,
+    VERIFICATION_FINALE,
     CLOSED,
     REJECTED
 }

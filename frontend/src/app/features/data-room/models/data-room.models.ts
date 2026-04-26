@@ -14,11 +14,11 @@ export const DATA_ROOM_FOLDERS: DataRoomFolder[] = [
 ];
 
 export const DATA_ROOM_FOLDER_LABELS: Record<DataRoomFolder, string> = {
-  FINANCIAL: 'Financial',
-  LEGAL: 'Legal',
-  PRODUCT: 'Product',
-  TEAM: 'Team',
-  MARKET: 'Market',
+  FINANCIAL: 'Financier',
+  LEGAL: 'Juridique',
+  PRODUCT: 'Produit',
+  TEAM: 'Equipe',
+  MARKET: 'Marche',
 };
 
 export interface DataRoomDocument {

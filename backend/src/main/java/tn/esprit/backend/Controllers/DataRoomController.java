@@ -33,6 +33,11 @@ public class DataRoomController {
         return dataRoomService.createDataRoom(dR.getStartupId(), dR.getInvestorId(), dR.getDealId());
     }
 
+    @PostMapping("/deal/{dealId}/ensure")
+    public DataRoom ensureForDeal(@PathVariable String dealId) {
+        return dataRoomService.ensureDataRoomForDeal(dealId);
+    }
+
     @PostMapping("/upload")
     public void upload(
             @RequestParam String roomId,

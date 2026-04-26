@@ -1,7 +1,5 @@
 <div *ngIf="isVisible" class="form-overlay">
   <div class="form-panel">
-    
-    <!-- Header -->
     <div class="form-header">
       <div>
         <h2 class="form-title">
@@ -15,7 +13,7 @@
         <p class="form-sub">
           {{ isAddMode
               ? 'Remplissez les informations pour soumettre votre demande'
-              : 'Les champs grisés ne sont pas modifiables' }}
+              : 'Les informations principales restent visibles sans exposer de donnees techniques' }}
         </p>
       </div>
       <button class="close-btn" (click)="closeForm()">
@@ -27,7 +25,6 @@
       </button>
     </div>
 
-    <!-- Success Message -->
     <div *ngIf="submitSuccess" class="success-banner">
       <svg width="14" height="14" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2">
@@ -37,15 +34,9 @@
     </div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-body">
-
-      <!-- Read-only fields for edit mode -->
       <ng-container *ngIf="isEditMode && currentRequest">
         <div class="section-label">INFORMATIONS NON MODIFIABLES</div>
         <div class="readonly-grid">
-          <div class="readonly-box">
-            <div class="readonly-label">ID DEMANDE</div>
-            <div class="readonly-val">{{ currentRequest.id }}</div>
-          </div>
           <div class="readonly-box">
             <div class="readonly-label">DATE D'ENVOI</div>
             <div class="readonly-val">
@@ -53,49 +44,47 @@
             </div>
           </div>
           <div class="readonly-box">
-            <div class="readonly-label">ID INVESTISSEUR</div>
-            <div class="readonly-val">{{ currentRequest.investorId }}</div>
+            <div class="readonly-label">PROFIL INVESTISSEUR</div>
+            <div class="readonly-val">Votre espace investisseur</div>
           </div>
           <div class="readonly-box">
-            <div class="readonly-label">ID STARTUP</div>
-            <div class="readonly-val">{{ currentRequest.startupId }}</div>
+            <div class="readonly-label">STARTUP CIBLE</div>
+            <div class="readonly-val">{{ startupName }}</div>
           </div>
         </div>
         <div class="form-divider"></div>
         <div class="section-label">CHAMPS MODIFIABLES</div>
       </ng-container>
 
-      <!-- Required fields for add mode -->
-      <ng-container *ngIf="isAddMode" >
+      <ng-container *ngIf="isAddMode">
         <div class="section-label">INFORMATIONS OBLIGATOIRES</div>
 
-        <div class="field">
-          <label class="field-label" for="investorId">
-            Identifiant investisseur <span class="req">*</span>
-          </label>
-          <p class="field-hint">
-            Identifiant unique de l'investisseur sur la plateforme
-          </p>
-          <input id="investorId" type="text"
-                 formControlName="investorId"
-                 [class.err]="isInvalid('investorId')"
-                 placeholder="ex: INV-2024-001"/>
-          <span *ngIf="isInvalid('investorId')" class="err-msg">
-            {{ getError('investorId') }}
-          </span>
+        <div class="readonly-grid">
+          <div class="readonly-box">
+            <div class="readonly-label">PROFIL INVESTISSEUR</div>
+            <div class="readonly-val">Votre espace investisseur</div>
+          </div>
+          <div class="readonly-box">
+            <div class="readonly-label">STARTUP CIBLE</div>
+            <div class="readonly-val">{{ startupName }}</div>
+          </div>
+          <div class="readonly-box" *ngIf="startupSector">
+            <div class="readonly-label">SECTEUR</div>
+            <div class="readonly-val">{{ startupSector }}</div>
+          </div>
         </div>
 
-        <div class="field">
+        <div class="field" *ngIf="!startupResolved">
           <label class="field-label" for="startupId">
-            Identifiant startup <span class="req">*</span>
+            Startup cible <span class="req">*</span>
           </label>
           <p class="field-hint">
-            Identifiant de la startup ciblée par la demande
+            Selectionne une startup depuis la liste pour pre-remplir automatiquement cette demande.
           </p>
           <input id="startupId" type="text"
                  formControlName="startupId"
                  [class.err]="isInvalid('startupId')"
-                 placeholder="ex: START-AGRI-07"/>
+                 placeholder="Startup non selectionnee"/>
           <span *ngIf="isInvalid('startupId')" class="err-msg">
             {{ getError('startupId') }}
           </span>
@@ -105,22 +94,19 @@
         <div class="section-label">INFORMATIONS OPTIONNELLES</div>
       </ng-container>
 
-      <!-- Common fields for both modes -->
       <div>
-
-        <!-- introMessage -->
         <div class="field">
           <label class="field-label" for="introMessage">
             Message d'introduction
           </label>
           <p class="field-hint">
-            Présentez votre démarche à la startup (20 – 500 caractères)
+            Presentez votre demarche a la startup (20 a 500 caracteres)
           </p>
           <textarea id="introMessage"
-          formControlName="introMessage"
-          [class.err]="isInvalid('introMessage')"
-          rows="4"
-          placeholder="Présentez-vous et expliquez votre intérêt..."></textarea>
+                    formControlName="introMessage"
+                    [class.err]="isInvalid('introMessage')"
+                    rows="4"
+                    placeholder="Presentez-vous et expliquez votre interet..."></textarea>
           <div class="char-row">
             <span class="char-count"
                   [class.near]="charCount > 400"
@@ -133,13 +119,12 @@
           </span>
         </div>
 
-        <!-- ticketProposed -->
         <div class="field">
           <label class="field-label" for="ticketProposed">
-            Ticket d'investissement envisagé
+            Ticket d'investissement envisage
           </label>
           <p class="field-hint">
-            Montant envisagé en TND — visible uniquement par la startup
+            Montant envisage en TND visible uniquement par la startup
           </p>
           <div class="input-unit">
             <input id="ticketProposed" type="number"
@@ -153,13 +138,12 @@
           </span>
         </div>
 
-        <!-- PDF upload -->
         <div class="field">
-          <label class="field-label">Document de présentation (PDF)</label>
+          <label class="field-label">Document de presentation (PDF)</label>
           <p class="field-hint">
             {{ isEditMode
-                ? 'Cliquer pour remplacer le document existant (optionnel)'
-                : 'Portfolio ou track record — format PDF, max 5 MB' }}
+                ? 'Cliquez pour remplacer le document existant si necessaire'
+                : 'Portfolio ou track record au format PDF, max 5 MB' }}
           </p>
 
           <div *ngIf="!selectedFile"
@@ -177,9 +161,9 @@
             <div class="file-zone-text">
               {{ isEditMode
                   ? 'Cliquer pour remplacer le PDF actuel'
-                  : 'Cliquer pour sélectionner un PDF' }}
+                  : 'Cliquer pour selectionner un PDF' }}
             </div>
-            <div class="file-zone-sub">Format PDF uniquement — max 5 MB</div>
+            <div class="file-zone-sub">Format PDF uniquement, max 5 MB</div>
           </div>
 
           <div *ngIf="selectedFile" class="file-chosen">
@@ -195,19 +179,16 @@
 
           <span *ngIf="fileError" class="err-msg">{{ fileError }}</span>
         </div>
-
       </div>
-    <!-- Actions -->
+
       <div class="form-actions">
         <button type="button" class="btn btn-cancel" (click)="closeForm()">
           Annuler
         </button>
-        <button type="submit" class="btn btn-submit"
-          [disabled]="isSubmitting">
+        <button type="submit" class="btn btn-submit" [disabled]="isSubmitting">
           {{ submitLabel }}
         </button>
       </div>
     </form>
-
   </div>
 </div>

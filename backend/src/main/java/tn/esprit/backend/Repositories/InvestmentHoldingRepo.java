@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface InvestmentHoldingRepo extends MongoRepository<InvestmentHolding, String> {
     Optional<InvestmentHolding> findByInvestmentRequestId(String investmentRequestId);
+    Optional<InvestmentHolding> findByStripeCheckoutSessionId(String stripeCheckoutSessionId);
     List<InvestmentHolding> findByInvestorId(String investorId);
     List<InvestmentHolding> findByStartupId(String startupId);
 }

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Document(collection = "investment_holding")
@@ -20,11 +21,13 @@ public class InvestmentHolding {
     private String investmentRequestId;
     private String investorId;
     private String startupId;
-    private Long amount;
-    private String currency;
+    private Long amountTnd;
+    private BigDecimal amountEur;
+    private String currencyDisplayed;
+    private String stripeCurrency;
     private InvestmentHoldingStatus status;
+    private String stripeCheckoutSessionId;
     private String stripePaymentIntentId;
-    private String stripeClientSecret;
     private LocalDateTime createdAt;
     private LocalDateTime fundedAt;
     private LocalDateTime releasedAt;

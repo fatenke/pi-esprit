@@ -1,36 +1,46 @@
 <div class="page">
   <div class="header">
-    <h2>Investment Criteria</h2>
-    <p class="sub">Create a profile of what you’re looking to invest in.</p>
+    <h2>{{ isEditMode ? "Modifier le critere d'investissement" : "Critere d'investissement" }}</h2>
+    <p class="sub">
+      {{ isEditMode ? "Mets a jour le profil d'investissement en gardant la meme these." : "Definis ton profil d'investissement et les opportunites que tu recherches." }}
+    </p>
+  </div>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+
+  <div class="helper-card" *ngIf="!isEditMode && existingCriteriaId">
+    <strong>Profil deja existant</strong>
+    <p>Un investisseur ne peut avoir qu un seul critere. Ouvre le profil existant pour le modifier.</p>
+    <button type="button" class="btn secondary" (click)="openExistingCriteria()">Ouvrir le critere existant</button>
   </div>
 
   <form class="card" (ngSubmit)="submit()">
     <div class="grid">
       <div class="field">
-        <label for="investorId">Investor ID</label>
+        <label for="investorId">Identifiant investisseur</label>
         <input
           id="investorId"
           type="text"
           [(ngModel)]="criteria.investorId"
           name="investorId"
-          placeholder="e.g. INV-001"
+          placeholder="ex: INV-001"
           required
         />
       </div>
 
       <div class="field">
-        <label for="location">Location</label>
+        <label for="location">Zone geographique</label>
         <input
           id="location"
           type="text"
           [(ngModel)]="criteria.location"
           name="location"
-          placeholder="e.g. Europe, MENA, Remote"
+          placeholder="ex: Europe, MENA, Remote"
         />
       </div>
 
       <div class="field">
-        <label for="minBudget">Min budget</label>
+        <label for="minBudget">Budget minimum</label>
         <input
           id="minBudget"
           type="number"
@@ -42,7 +52,7 @@
       </div>
 
       <div class="field">
-        <label for="maxBudget">Max budget</label>
+        <label for="maxBudget">Budget maximum</label>
         <input
           id="maxBudget"
           type="number"
@@ -54,16 +64,16 @@
       </div>
 
       <div class="field full">
-        <label>Sectors</label>
+        <label>Secteurs</label>
         <div class="chipRow">
           <input
             type="text"
             [(ngModel)]="sectorDraft"
             name="sectorDraft"
-            placeholder="Type a sector and press Add"
+            placeholder="Saisis un secteur puis clique sur Ajouter"
             (keydown.enter)="$event.preventDefault(); addSector()"
           />
-          <button type="button" class="btn secondary" (click)="addSector()">Add</button>
+          <button type="button" class="btn secondary" (click)="addSector()">Ajouter</button>
         </div>
         <div class="suggestions" *ngIf="filteredSectorSuggestions.length > 0">
           <button
@@ -84,23 +94,23 @@
             title="Remove"
           >
             <span class="chipText">{{ s }}</span>
-            <span class="chipX">×</span>
+            <span class="chipX">x</span>
           </button>
         </div>
-        <p class="hint" *ngIf="criteria.sectors.length === 0">No sectors added yet.</p>
+        <p class="hint" *ngIf="criteria.sectors.length === 0">Aucun secteur ajoute pour le moment.</p>
       </div>
 
       <div class="field full">
-        <label>Stages</label>
+        <label>Stades</label>
         <div class="chipRow">
           <input
             type="text"
             [(ngModel)]="stageDraft"
             name="stageDraft"
-            placeholder="Type a stage (Seed, Series A, ...) and press Add"
+            placeholder="Saisis un stade (Seed, Series A...) puis clique sur Ajouter"
             (keydown.enter)="$event.preventDefault(); addStage()"
           />
-          <button type="button" class="btn secondary" (click)="addStage()">Add</button>
+          <button type="button" class="btn secondary" (click)="addStage()">Ajouter</button>
         </div>
         <div class="suggestions" *ngIf="filteredStageSuggestions.length > 0">
           <button
@@ -121,15 +131,17 @@
             title="Remove"
           >
             <span class="chipText">{{ s }}</span>
-            <span class="chipX">×</span>
+            <span class="chipX">x</span>
           </button>
         </div>
-        <p class="hint" *ngIf="criteria.stages.length === 0">No stages added yet.</p>
+        <p class="hint" *ngIf="criteria.stages.length === 0">Aucun stade ajoute pour le moment.</p>
       </div>
     </div>
 
     <div class="actions">
-      <button type="submit" class="btn primary">Save criteria</button>
+      <button type="submit" class="btn primary" [disabled]="submitting">
+        {{ isEditMode ? 'Mettre a jour le critere' : 'Enregistrer le critere' }}
+      </button>
     </div>
   </form>
 </div>

@@ -1,8 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { PaymentCancelComponent } from './components/payment-cancel/payment-cancel.component';
+import { PaymentSuccessComponent } from './components/payment-success/payment-success.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'investment', pathMatch: 'full' },
+  { path: 'payment-success', component: PaymentSuccessComponent },
+  { path: 'payment-cancel', component: PaymentCancelComponent },
   {
     path: 'investment',
     loadChildren: () =>

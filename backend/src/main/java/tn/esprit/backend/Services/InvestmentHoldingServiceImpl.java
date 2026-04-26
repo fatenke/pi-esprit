@@ -3,17 +3,28 @@ package tn.esprit.backend.Services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.esprit.backend.DTO.CreateInvestmentHoldingRequest;
+import tn.esprit.backend.DTO.CheckoutSessionResponse;
+import tn.esprit.backend.DTO.ConfirmCheckoutRequest;
+import tn.esprit.backend.DTO.CreateCheckoutSessionRequest;
 import tn.esprit.backend.DTO.CreateMilestoneRequest;
 import tn.esprit.backend.DTO.InvestmentHoldingMilestoneResponse;
 import tn.esprit.backend.DTO.InvestmentHoldingResponse;
-import tn.esprit.backend.Entities.*;
+import tn.esprit.backend.Entities.DealPipeline;
+import tn.esprit.backend.Entities.DealStatus;
+import tn.esprit.backend.Entities.InvestmentHolding;
+import tn.esprit.backend.Entities.InvestmentHoldingMilestone;
+import tn.esprit.backend.Entities.InvestmentHoldingStatus;
+import tn.esprit.backend.Entities.InvestmentMilestoneStatus;
+import tn.esprit.backend.Entities.InvestmentRequest;
 import tn.esprit.backend.Repositories.DealPipelineRepo;
 import tn.esprit.backend.Repositories.InvestmentHoldingMilestoneRepo;
 import tn.esprit.backend.Repositories.InvestmentHoldingRepo;
+import tn.esprit.backend.config.StripeProperties;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -36,57 +47,96 @@ public class InvestmentHoldingServiceImpl implements InvestmentHoldingService {
     private final InvestmentRequestService investmentRequestService;
     private final DealPipelineRepo dealPipelineRepo;
     private final StripePaymentService stripePaymentService;
+    private final StripeProperties stripeProperties;
 
     @Override
     @Transactional
-    public InvestmentHoldingResponse createHolding(String requestId, CreateInvestmentHoldingRequest request, RequestActor actor) {
-        requireRole(actor, UserRole.INVESTOR, "Only the linked investor can create a holding.");
+    public CheckoutSessionResponse createCheckoutSession(String requestId, CreateCheckoutSessionRequest request, RequestActor actor) {
+        requireRole(actor, UserRole.INVESTOR, "Only the linked investor can create a checkout session.");
 
         InvestmentRequest investmentRequest = investmentRequestService.getInvestmentRequest(requestId);
         if (!investmentRequest.getInvestorId().equals(actor.getUserId())) {
-            throw new IllegalArgumentException("Only the investor linked to this request can create a holding.");
+            throw new IllegalArgumentException("Only the investor linked to this request can create a checkout session.");
         }
 
-        DealPipeline deal = dealPipelineRepo.findAllByRequestId(requestId).stream()
-                .max(Comparator.comparing(
-                        DealPipeline::getStatusChangedAt,
-                        Comparator.nullsLast(Comparator.naturalOrder())
-                ).thenComparing(DealPipeline::getId, Comparator.nullsLast(Comparator.naturalOrder())))
-                .orElseThrow(() -> new IllegalArgumentException("No deal pipeline exists for this investment request."));
-        if (deal.getStatus() != DealStatus.NEGOTIATION) {
-            throw new IllegalArgumentException("A holding can only be created when the deal is in NEGOTIATION.");
+        DealPipeline deal = resolveDealForRequest(requestId);
+        if (deal.getStatus() != DealStatus.DUE_DILIGENCE) {
+            throw new IllegalArgumentException("A checkout session can only be created when the deal is in DUE_DILIGENCE.");
         }
 
-        validateHoldingRequest(request);
+        validateCheckoutRequest(request);
 
-        holdingRepo.findByInvestmentRequestId(requestId).ifPresent(existing -> {
-            if (existing.getStatus() != InvestmentHoldingStatus.CANCELLED
-                    && existing.getStatus() != InvestmentHoldingStatus.REFUNDED) {
-                throw new IllegalArgumentException("A holding already exists for this investment request.");
-            }
-        });
+        Long amountTnd = request.getAmountTnd();
+        BigDecimal amountEur = convertTndToEur(amountTnd);
+        long stripeAmount = convertEurToStripeMinorUnits(amountEur);
 
-        InvestmentHolding holding = InvestmentHolding.builder()
-                .investmentRequestId(requestId)
-                .investorId(investmentRequest.getInvestorId())
-                .startupId(investmentRequest.getStartupId())
-                .amount(request.getAmount())
-                .currency(request.getCurrency().toUpperCase())
-                .status(InvestmentHoldingStatus.CREATED)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        StripePaymentIntentData paymentIntent = stripePaymentService.createPaymentIntent(
-                holding.getAmount(),
-                holding.getCurrency(),
+        StripeCheckoutSessionData checkoutSession = stripePaymentService.createCheckoutSession(
+                stripeAmount,
                 requestId,
-                holding.getInvestorId(),
-                holding.getStartupId()
+                investmentRequest.getInvestorId(),
+                investmentRequest.getStartupId()
         );
 
-        holding.setStripePaymentIntentId(paymentIntent.getPaymentIntentId());
-        holding.setStripeClientSecret(paymentIntent.getClientSecret());
+        InvestmentHolding existing = holdingRepo.findByInvestmentRequestId(requestId).orElse(null);
+        if (existing != null
+                && existing.getStatus() != InvestmentHoldingStatus.CANCELLED
+                && existing.getStatus() != InvestmentHoldingStatus.REFUNDED
+                && existing.getStatus() != InvestmentHoldingStatus.WAITING_PAYMENT) {
+            throw new IllegalArgumentException("A holding already exists for this investment request.");
+        }
+
+        InvestmentHolding holding = existing == null ? new InvestmentHolding() : existing;
+        if (holding.getCreatedAt() == null) {
+            holding.setCreatedAt(LocalDateTime.now());
+        }
+
+        holding.setInvestmentRequestId(requestId);
+        holding.setInvestorId(investmentRequest.getInvestorId());
+        holding.setStartupId(investmentRequest.getStartupId());
+        holding.setAmountTnd(amountTnd);
+        holding.setAmountEur(amountEur);
+        holding.setCurrencyDisplayed("TND");
+        holding.setStripeCurrency("eur");
         holding.setStatus(InvestmentHoldingStatus.WAITING_PAYMENT);
+        holding.setStripeCheckoutSessionId(checkoutSession.getSessionId());
+        holding.setStripePaymentIntentId(null);
+        holding.setFundedAt(null);
+
+        InvestmentHolding savedHolding = holdingRepo.save(holding);
+        return CheckoutSessionResponse.builder()
+                .holdingId(savedHolding.getId())
+                .amountTnd(savedHolding.getAmountTnd())
+                .amountEur(savedHolding.getAmountEur())
+                .checkoutUrl(checkoutSession.getCheckoutUrl())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public InvestmentHoldingResponse confirmCheckout(ConfirmCheckoutRequest request) {
+        if (request == null || request.getSessionId() == null || request.getSessionId().isBlank()) {
+            throw new IllegalArgumentException("Checkout session id is required.");
+        }
+
+        StripeCheckoutSessionDetails session = stripePaymentService.getCheckoutSessionDetails(request.getSessionId().trim());
+        if (!"paid".equalsIgnoreCase(session.getPaymentStatus())) {
+            throw new IllegalArgumentException("Stripe Checkout payment is not completed yet. Current status: " + session.getPaymentStatus());
+        }
+
+        InvestmentHolding holding = holdingRepo.findByStripeCheckoutSessionId(session.getSessionId())
+                .orElseThrow(() -> new IllegalArgumentException("No holding matches this Stripe Checkout session."));
+
+        if (holding.getStatus() == InvestmentHoldingStatus.CANCELLED || holding.getStatus() == InvestmentHoldingStatus.REFUNDED) {
+            throw new IllegalArgumentException("This holding can no longer be confirmed.");
+        }
+
+        if (holding.getFundedAt() == null) {
+            holding.setFundedAt(LocalDateTime.now());
+        }
+        holding.setStatus(InvestmentHoldingStatus.FUNDS_HELD);
+        if (session.getPaymentIntentId() != null && !session.getPaymentIntentId().isBlank()) {
+            holding.setStripePaymentIntentId(session.getPaymentIntentId());
+        }
 
         return toResponse(holdingRepo.save(holding));
     }
@@ -104,24 +154,6 @@ public class InvestmentHoldingServiceImpl implements InvestmentHoldingService {
                 .orElseThrow(() -> new IllegalArgumentException("No holding found for this investment request."));
         authorizeHoldingAccess(holding, actor, true);
         return toResponse(holding);
-    }
-
-    @Override
-    @Transactional
-    public InvestmentHoldingResponse confirmPayment(String holdingId, RequestActor actor) {
-        InvestmentHolding holding = requireHolding(holdingId);
-        requireRole(actor, UserRole.INVESTOR, "Only the linked investor can confirm the payment.");
-        ensureInvestorAccess(holding, actor);
-        ensureStatus(holding, List.of(InvestmentHoldingStatus.WAITING_PAYMENT), "Payment can only be confirmed from WAITING_PAYMENT.");
-
-        String stripeStatus = stripePaymentService.getPaymentIntentStatus(holding.getStripePaymentIntentId());
-        if (!"succeeded".equalsIgnoreCase(stripeStatus)) {
-            throw new IllegalArgumentException("Stripe test payment is not completed yet. Current status: " + stripeStatus);
-        }
-
-        holding.setStatus(InvestmentHoldingStatus.FUNDS_HELD);
-        holding.setFundedAt(LocalDateTime.now());
-        return toResponse(holdingRepo.save(holding));
     }
 
     @Override
@@ -207,7 +239,7 @@ public class InvestmentHoldingServiceImpl implements InvestmentHoldingService {
         long usedAmount = milestoneRepo.findByHoldingIdOrderByDueDateAsc(holdingId).stream()
                 .mapToLong(m -> m.getAmount() == null ? 0L : m.getAmount())
                 .sum();
-        if (usedAmount + request.getAmount() > holding.getAmount()) {
+        if (usedAmount + request.getAmount() > holding.getAmountTnd()) {
             throw new IllegalArgumentException("Milestone total exceeds the holding amount.");
         }
 
@@ -286,18 +318,12 @@ public class InvestmentHoldingServiceImpl implements InvestmentHoldingService {
         return toMilestoneResponse(saved);
     }
 
-    private void validateHoldingRequest(CreateInvestmentHoldingRequest request) {
+    private void validateCheckoutRequest(CreateCheckoutSessionRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException("Holding payload is required.");
+            throw new IllegalArgumentException("Checkout payload is required.");
         }
-        if (request.getAmount() == null || request.getAmount() <= 0) {
-            throw new IllegalArgumentException("Amount must be greater than zero.");
-        }
-        if (request.getCurrency() == null || request.getCurrency().isBlank()) {
-            throw new IllegalArgumentException("Currency is required.");
-        }
-        if (request.getCurrency().length() != 3) {
-            throw new IllegalArgumentException("Currency must be a 3-letter code.");
+        if (request.getAmountTnd() == null || request.getAmountTnd() <= 0) {
+            throw new IllegalArgumentException("amountTnd must be greater than zero.");
         }
     }
 
@@ -312,6 +338,26 @@ public class InvestmentHoldingServiceImpl implements InvestmentHoldingService {
             throw new IllegalArgumentException("Milestone amount must be greater than zero.");
         }
         parseDate(request.getDueDate(), "dueDate");
+    }
+
+    private DealPipeline resolveDealForRequest(String requestId) {
+        return dealPipelineRepo.findAllByRequestId(requestId).stream()
+                .max(Comparator.comparing(
+                        DealPipeline::getStatusChangedAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ).thenComparing(DealPipeline::getId, Comparator.nullsLast(Comparator.naturalOrder())))
+                .orElseThrow(() -> new IllegalArgumentException("No deal pipeline exists for this investment request."));
+    }
+
+    private BigDecimal convertTndToEur(Long amountTnd) {
+        return BigDecimal.valueOf(amountTnd)
+                .divide(stripeProperties.getExchangeRateTndEur(), 2, RoundingMode.HALF_UP);
+    }
+
+    private long convertEurToStripeMinorUnits(BigDecimal amountEur) {
+        return amountEur.multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP)
+                .longValue();
     }
 
     private LocalDateTime parseDate(String value, String fieldName) {
@@ -412,11 +458,13 @@ public class InvestmentHoldingServiceImpl implements InvestmentHoldingService {
                 .investmentRequestId(holding.getInvestmentRequestId())
                 .investorId(holding.getInvestorId())
                 .startupId(holding.getStartupId())
-                .amount(holding.getAmount())
-                .currency(holding.getCurrency())
+                .amountTnd(holding.getAmountTnd())
+                .amountEur(holding.getAmountEur())
+                .currencyDisplayed(holding.getCurrencyDisplayed())
+                .stripeCurrency(holding.getStripeCurrency())
                 .status(holding.getStatus())
+                .stripeCheckoutSessionId(holding.getStripeCheckoutSessionId())
                 .stripePaymentIntentId(holding.getStripePaymentIntentId())
-                .stripeClientSecret(holding.getStripeClientSecret())
                 .createdAt(holding.getCreatedAt())
                 .fundedAt(holding.getFundedAt())
                 .releasedAt(holding.getReleasedAt())

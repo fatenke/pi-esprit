@@ -29,6 +29,9 @@ interface DataRoomDocumentDto {
 interface DataRoomApiEnvelope {
   roomId?: string;
   id?: string;
+  dealId?: string;
+  startupId?: string;
+  investorId?: string;
   ndaSigned?: boolean;
   nda?: { signed?: boolean };
   documents?: DataRoomDocumentDto[];
@@ -51,6 +54,15 @@ export class DataRoomApiService {
     return this.http
       .get<DataRoomApiEnvelope>(`${this.base}/${encodeURIComponent(roomId)}`)
       .pipe(map((raw) => this.normalize(roomId, raw)));
+  }
+
+  ensureRoomForDeal(dealId: string): Observable<{ id: string }> {
+    return this.http.post<DataRoomApiEnvelope>(
+      `${this.base}/deal/${encodeURIComponent(dealId)}/ensure`,
+      {}
+    ).pipe(
+      map((raw) => ({ id: String(raw.id ?? raw.roomId ?? '') }))
+    );
   }
 
   upload(roomId: string, folder: DataRoomFolder, file: File): Observable<unknown> {

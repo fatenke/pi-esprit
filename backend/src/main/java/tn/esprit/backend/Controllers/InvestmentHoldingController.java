@@ -3,13 +3,13 @@ package tn.esprit.backend.Controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.esprit.backend.DTO.CreateInvestmentHoldingRequest;
+import tn.esprit.backend.DTO.ConfirmCheckoutRequest;
+import tn.esprit.backend.DTO.CreateCheckoutSessionRequest;
 import tn.esprit.backend.DTO.CreateMilestoneRequest;
-import tn.esprit.backend.DTO.InvestmentHoldingMilestoneResponse;
-import tn.esprit.backend.DTO.InvestmentHoldingResponse;
-import tn.esprit.backend.DTO.StripeConfigResponse;
+import tn.esprit.backend.Services.InvestmentHoldingService;
+import tn.esprit.backend.Services.RequestActor;
+import tn.esprit.backend.Services.UserRole;
 import tn.esprit.backend.Services.*;
-import tn.esprit.backend.config.StripeProperties;
 
 import java.util.Map;
 
@@ -18,22 +18,34 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class InvestmentHoldingController {
     private final InvestmentHoldingService investmentHoldingService;
-    private final StripeProperties stripeProperties;
 
-    @PostMapping("/{requestId}/holding")
-    public ResponseEntity<?> createHolding(
+    @PostMapping("/{requestId}/checkout-session")
+    public ResponseEntity<?> createCheckoutSession(
             @PathVariable String requestId,
-            @RequestBody CreateInvestmentHoldingRequest request,
+            @RequestBody CreateCheckoutSessionRequest request,
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Role", required = false) String role
     ) {
         try {
-            return ResponseEntity.ok(investmentHoldingService.createHolding(requestId, request, actor(userId, role)));
+            return ResponseEntity.ok(investmentHoldingService.createCheckoutSession(requestId, request, actor(userId, role)));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
-                    "error", safeMessage(e, "Unexpected server error while creating the holding.")
+                    "error", safeMessage(e, "Unexpected server error while creating the checkout session.")
+            ));
+        }
+    }
+
+    @PostMapping("/confirm-checkout")
+    public ResponseEntity<?> confirmCheckout(@RequestBody ConfirmCheckoutRequest request) {
+        try {
+            return ResponseEntity.ok(investmentHoldingService.confirmCheckout(request));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", safeMessage(e, "Unexpected server error while confirming the checkout.")
             ));
         }
     }
@@ -68,23 +80,6 @@ public class InvestmentHoldingController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
                     "error", safeMessage(e, "Unexpected server error while loading the holding.")
-            ));
-        }
-    }
-
-    @PostMapping("/holding/{holdingId}/confirm-payment")
-    public ResponseEntity<?> confirmPayment(
-            @PathVariable String holdingId,
-            @RequestHeader(value = "X-User-Id", required = false) String userId,
-            @RequestHeader(value = "X-User-Role", required = false) String role
-    ) {
-        try {
-            return ResponseEntity.ok(investmentHoldingService.confirmPayment(holdingId, actor(userId, role)));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                    "error", safeMessage(e, "Unexpected server error while confirming the payment.")
             ));
         }
     }
@@ -156,14 +151,6 @@ public class InvestmentHoldingController {
                     "error", safeMessage(e, "Unexpected server error while validating the milestone.")
             ));
         }
-    }
-
-    @GetMapping("/stripe/config")
-    public ResponseEntity<?> stripeConfig() {
-        if (stripeProperties.getPublicKey() == null || stripeProperties.getPublicKey().isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Stripe publishable key is missing."));
-        }
-        return ResponseEntity.ok(new StripeConfigResponse(stripeProperties.getPublicKey()));
     }
 
     private RequestActor actor(String userId, String role) {

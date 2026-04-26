@@ -70,8 +70,16 @@ export class DataRoomComponent implements OnInit, OnDestroy {
     return this.allDocuments.filter((d) => d.folder === this.selectedFolder);
   }
 
+  get totalDocuments(): number {
+    return this.allDocuments.length;
+  }
+
   get viewedCount(): number {
     return this.viewedDocumentIds.size;
+  }
+
+  get selectedFolderLabel(): string {
+    return this.folderLabels[this.selectedFolder];
   }
 
   loadRoom(silent = false): void {
@@ -88,7 +96,7 @@ export class DataRoomComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.loading = false;
-          this.snack.open('Could not load data room', 'Dismiss', { duration: 4000 });
+          this.snack.open('Impossible de charger la data room', 'Fermer', { duration: 4000 });
         },
       })
     );
@@ -100,12 +108,12 @@ export class DataRoomComponent implements OnInit, OnDestroy {
       this.api.signNda(this.roomId).subscribe({
         next: () => {
           this.ndaBusy = false;
-          this.snack.open('NDA signed successfully', 'OK', { duration: 3000 });
+          this.snack.open('NDA signe avec succes', 'OK', { duration: 3000 });
           this.loadRoom(true);
         },
         error: () => {
           this.ndaBusy = false;
-          this.snack.open('NDA signing failed', 'Dismiss', { duration: 4000 });
+          this.snack.open('Echec de la signature du NDA', 'Fermer', { duration: 4000 });
         },
       })
     );
@@ -126,13 +134,13 @@ export class DataRoomComponent implements OnInit, OnDestroy {
         next: () => {
           this.uploadBusy = false;
           input.value = '';
-          this.snack.open('File uploaded', 'OK', { duration: 2500 });
+          this.snack.open('Fichier televerse', 'OK', { duration: 2500 });
           this.loadRoom(true);
         },
         error: () => {
           this.uploadBusy = false;
           input.value = '';
-          this.snack.open('Upload failed', 'Dismiss', { duration: 4000 });
+          this.snack.open('Echec du televersement', 'Fermer', { duration: 4000 });
         },
       })
     );
@@ -148,7 +156,7 @@ export class DataRoomComponent implements OnInit, OnDestroy {
           window.open(url, '_blank', 'noopener,noreferrer');
         },
         error: () => {
-          this.snack.open('View was not logged (network error)', 'Dismiss', { duration: 3000 });
+          this.snack.open('La consultation n a pas pu etre journalisee (erreur reseau)', 'Fermer', { duration: 3000 });
           window.open(url, '_blank', 'noopener,noreferrer');
         },
       })

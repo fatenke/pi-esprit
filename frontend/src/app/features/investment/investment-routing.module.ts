@@ -36,6 +36,11 @@ const routes: Routes = [
     data: { title: 'Nouveau critère' },
   },
   {
+    path: 'criteria/edit/:id',
+    component: CriteriaFormComponent,
+    data: { title: 'Modifier critere' },
+  },
+  {
     path: 'kanban',
     component: KanbanBoardComponent,
     data: { title: 'Pipeline' },

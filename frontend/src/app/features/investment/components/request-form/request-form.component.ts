@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { STARTUP_CATALOG_BY_ID } from '../../data/startup-catalog';
 import { InvestmentRequestService } from '../../services/investment-request.service';
 import { InvestmentRequest } from '../../models/investment-request';
 
@@ -200,6 +201,21 @@ export class RequestFormComponent implements OnInit {
 
   get charCount(): number {
     return this.form.get('introMessage')?.value?.length ?? 0;
+  }
+
+  get startupResolved(): boolean {
+    const startupId = this.form.getRawValue().startupId ?? this.currentRequest?.startupId ?? '';
+    return !!STARTUP_CATALOG_BY_ID[startupId];
+  }
+
+  get startupName(): string {
+    const startupId = this.form.getRawValue().startupId ?? this.currentRequest?.startupId ?? '';
+    return STARTUP_CATALOG_BY_ID[startupId]?.name ?? 'Startup non selectionnee';
+  }
+
+  get startupSector(): string {
+    const startupId = this.form.getRawValue().startupId ?? this.currentRequest?.startupId ?? '';
+    return STARTUP_CATALOG_BY_ID[startupId]?.sector ?? '';
   }
 
   isInvalid(field: string): boolean {

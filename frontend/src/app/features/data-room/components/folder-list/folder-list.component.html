@@ -1,6 +1,6 @@
-<nav class="folder-nav" aria-label="Data room folders">
-  <div class="heading">Folders</div>
-  <mat-nav-list>
+<nav class="folder-nav" aria-label="Dossiers de la data room">
+  <div class="heading">Dossiers disponibles</div>
+  <mat-nav-list class="folder-list">
     <button
       mat-list-item
       type="button"
@@ -8,7 +8,9 @@
       [class.is-selected]="selected === f"
       (click)="select(f)"
     >
+      <mat-icon matListItemIcon>{{ iconFor(f) }}</mat-icon>
       <span matListItemTitle>{{ labels[f] }}</span>
+      <span matListItemLine>{{ hintFor(f) }}</span>
       <span matListItemMeta class="badge">{{ countFor(f) }}</span>
     </button>
   </mat-nav-list>

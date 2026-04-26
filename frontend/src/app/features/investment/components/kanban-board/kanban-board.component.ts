@@ -26,12 +26,12 @@ export class KanbanBoardComponent implements OnInit {
   ];
 
   readonly statusTitles: Record<DealStatus, string> = {
-    DISCOVERY: 'Discovery',
-    CONTACTED: 'Contacted',
-    NEGOTIATION: 'Negotiation',
-    DUE_DILIGENCE: 'Due diligence',
-    CLOSED: 'Closed',
-    REJECTED: 'Rejected',
+    DISCOVERY: 'Decouverte',
+    CONTACTED: 'Contact etabli',
+    NEGOTIATION: 'Negociation',
+    DUE_DILIGENCE: 'Verification finale',
+    CLOSED: 'Cloture',
+    REJECTED: 'Rejete',
   };
 
   private readonly statusOrder: DealStatus[] = this.statuses;
@@ -59,7 +59,7 @@ export class KanbanBoardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Kanban API error:', err);
-        this.error = 'Failed to load kanban board.';
+        this.error = 'Impossible de charger le tableau kanban.';
         this.columns = this.emptyColumns();
         this.loading = false;
       }
@@ -87,7 +87,7 @@ export class KanbanBoardComponent implements OnInit {
       dropEvent.previousContainer !== dropEvent.container &&
       (movedDeal.status === 'CLOSED' || movedDeal.status === 'REJECTED')
     ) {
-      this.error = 'Closed and rejected deals cannot change status.';
+      this.error = 'Les deals clotures ou rejetes ne peuvent plus changer de statut.';
       this.loadBoard();
       return;
     }
@@ -97,13 +97,13 @@ export class KanbanBoardComponent implements OnInit {
       movedDeal.status === 'CLOSED' &&
       newStatus === 'REJECTED'
     ) {
-      this.error = 'A closed deal cannot be rejected.';
+      this.error = 'Un deal cloture ne peut pas etre rejete.';
       this.loadBoard();
       return;
     }
 
     if (dropEvent.previousContainer !== dropEvent.container && toIndex < fromIndex) {
-      this.error = 'You cannot move a deal back to an earlier status.';
+      this.error = 'Impossible de ramener un deal vers un statut precedent.';
       this.loadBoard();
       return;
     }

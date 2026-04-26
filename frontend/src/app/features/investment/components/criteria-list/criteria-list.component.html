@@ -1,1 +1,249 @@
-<p>criteria-list works!</p>
+<div class="criteria-page">
+  <div class="page-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Criteres d investissement</div>
+        <h1>Liste des criteres d'investissement</h1>
+        <p>
+          Investisseur, admin ou startup: la liste s'adapte selon le role pour afficher les profils utiles.
+        </p>
+
+        <div class="hero-badges">
+          <span class="hero-badge">{{ roleLabel(selectedRole) }}</span>
+          <span class="hero-badge" *ngIf="isInvestorView">Investisseur {{ currentInvestorId }}</span>
+          <span class="hero-badge admin" *ngIf="isAdminView">Vue administrateur</span>
+          <span class="hero-badge startup" *ngIf="isStartupView">Lecture seule startup</span>
+        </div>
+      </div>
+
+      <div class="role-panel">
+        <label>
+          <span>Role</span>
+          <select [ngModel]="selectedRole" (ngModelChange)="setRole($event)">
+            <option *ngFor="let role of roleOptions" [ngValue]="role">{{ roleLabel(role) }}</option>
+          </select>
+        </label>
+
+        <label *ngIf="isInvestorView">
+          <span>Identifiant investisseur</span>
+          <input [(ngModel)]="currentInvestorId" (ngModelChange)="setInvestorId($event)" placeholder="dev-investor" />
+        </label>
+      </div>
+    </section>
+
+    <section class="toolbar" *ngIf="!isInvestorView">
+      <div class="toolbar-grid">
+        <label class="search-field">
+          <span>Recherche</span>
+          <input
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="applyFilters()"
+            placeholder="Rechercher par nom de profil"
+          />
+        </label>
+
+        <label>
+          <span>Secteur</span>
+          <select [(ngModel)]="selectedSector" (ngModelChange)="applyFilters()">
+            <option value="ALL">Tous les secteurs</option>
+            <option *ngFor="let sector of availableSectors" [value]="sector">{{ sector }}</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Stade</span>
+          <select [(ngModel)]="selectedStage" (ngModelChange)="applyFilters()">
+            <option value="ALL">Tous les stades</option>
+            <option *ngFor="let stage of availableStages" [value]="stage">{{ stage }}</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Statut</span>
+          <select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+            <option value="ALL">Tous</option>
+            <option value="ACTIVE">Actif</option>
+            <option value="INACTIVE">Inactif</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="toolbar-actions">
+        <div class="results-chip">{{ visibleCriteria.length }} critere(s)</div>
+        <button class="ghost-btn" type="button" (click)="resetFilters()">Reinitialiser</button>
+      </div>
+    </section>
+
+    <section class="profile-shell" *ngIf="isInvestorView">
+      <div class="loader-wrap" *ngIf="loading">
+        <div class="loader"></div>
+        <p>Chargement du profil investisseur...</p>
+      </div>
+
+      <div class="empty-state profile-empty" *ngIf="!loading && !investorCriteria">
+        <h2>Profil d investissement non configure</h2>
+        <p>{{ emptyMessage }}</p>
+        <button class="primary-btn" type="button" routerLink="/investment/criteria">
+          Creer mon critere
+        </button>
+      </div>
+
+      <div class="profile-card" *ngIf="!loading && investorCriteria as criteria">
+        <div class="profile-head">
+          <div>
+            <div class="eyebrow">Profil investisseur</div>
+            <h2>{{ profileTitle(criteria) }}</h2>
+            <p>
+              Ce profil resume la these d investissement actuelle de <strong>{{ criteria.investorId }}</strong>.
+            </p>
+          </div>
+
+          <div class="profile-actions">
+            <span class="status-badge" [class.inactive]="statusLabel(criteria) === 'Inactif'">
+              {{ statusLabel(criteria) }}
+            </span>
+            <button class="ghost-btn" type="button" (click)="editCriteria(criteria)">Modifier</button>
+            <button class="danger-btn" type="button" (click)="deleteCriteria(criteria)">Supprimer</button>
+          </div>
+        </div>
+
+        <div class="profile-grid">
+          <article class="profile-panel metric">
+            <span class="panel-label">Ticket cible</span>
+            <strong>{{ ticketLabel(criteria) }}</strong>
+            <small>Budget minimum et maximum definis pour ce profil.</small>
+          </article>
+
+          <article class="profile-panel metric">
+            <span class="panel-label">Zone geographique</span>
+            <strong>{{ criteria.location || 'Non precisee' }}</strong>
+            <small>Marche ou region dans laquelle l investisseur prefere sourcer.</small>
+          </article>
+
+          <article class="profile-panel full">
+            <div class="panel-title-row">
+              <span class="panel-label">Secteurs privilegies</span>
+              <span class="panel-meta">{{ criteria.sectors.length }} secteur(s)</span>
+            </div>
+            <div class="chip-list">
+              <span class="mini-chip" *ngFor="let sector of criteria.sectors">{{ sector }}</span>
+              <span class="muted" *ngIf="criteria.sectors.length === 0">Aucun secteur renseigne</span>
+            </div>
+          </article>
+
+          <article class="profile-panel full">
+            <div class="panel-title-row">
+              <span class="panel-label">Stades recherches</span>
+              <span class="panel-meta">{{ criteria.stages.length }} stade(s)</span>
+            </div>
+            <div class="chip-list">
+              <span class="mini-chip stage" *ngFor="let stage of criteria.stages">{{ stage }}</span>
+              <span class="muted" *ngIf="criteria.stages.length === 0">Aucun stade renseigne</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="profile-footer">
+          <div class="footer-item">
+            <span>Derniere mise a jour</span>
+            <strong>{{ criteriaDate(criteria) ? (criteriaDate(criteria) | date:'dd MMM yyyy, HH:mm') : 'N/A' }}</strong>
+          </div>
+          <div class="footer-item">
+            <span>Mode de gestion</span>
+            <strong>Un seul critere par investisseur</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-shell" *ngIf="!isInvestorView">
+      <div class="loader-wrap" *ngIf="loading">
+        <div class="loader"></div>
+        <p>Chargement des criteres...</p>
+      </div>
+
+      <div class="empty-state" *ngIf="!loading && visibleCriteria.length === 0">
+        <h2>Aucun critere disponible</h2>
+        <p>{{ emptyMessage }}</p>
+      </div>
+
+      <div class="table-wrap" *ngIf="!loading && visibleCriteria.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Secteurs</th>
+              <th>Stades</th>
+              <th>Ticket</th>
+              <th>Statut</th>
+              <th>Date</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let criteria of paginatedCriteria; trackBy: trackByCriteria">
+              <td>
+                <div class="cell-title">
+                  <strong>{{ criteria.name }}</strong>
+                  <span>{{ criteria.investorId }}</span>
+                </div>
+              </td>
+
+              <td>
+                <div class="chip-list">
+                  <span class="mini-chip" *ngFor="let sector of criteria.sectors">{{ sector }}</span>
+                  <span class="muted" *ngIf="criteria.sectors.length === 0">Aucun secteur</span>
+                </div>
+              </td>
+
+              <td>
+                <div class="chip-list">
+                  <span class="mini-chip stage" *ngFor="let stage of criteria.stages">{{ stage }}</span>
+                  <span class="muted" *ngIf="criteria.stages.length === 0">Aucun stade</span>
+                </div>
+              </td>
+
+              <td>{{ ticketLabel(criteria) }}</td>
+
+              <td>
+                <span class="status-badge" [class.inactive]="statusLabel(criteria) === 'Inactif'">
+                  {{ statusLabel(criteria) }}
+                </span>
+              </td>
+
+              <td>
+                {{ criteriaDate(criteria) ? (criteriaDate(criteria) | date:'dd MMM yyyy') : 'N/A' }}
+              </td>
+
+              <td class="actions-col">
+                <div class="row-actions" *ngIf="isInvestorView">
+                  <button class="ghost-btn small" type="button" (click)="editCriteria(criteria)">Modifier</button>
+                  <button class="danger-btn small" type="button" (click)="deleteCriteria(criteria)">Supprimer</button>
+                </div>
+
+                <div class="row-actions" *ngIf="isAdminView">
+                  <button class="danger-btn small" type="button" (click)="deleteCriteria(criteria)">Supprimer</button>
+                </div>
+
+                <div class="row-actions" *ngIf="isStartupView">
+                  <span class="readonly-label">Lecture seule</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" *ngIf="!loading && visibleCriteria.length > 0">
+        <button class="ghost-btn" type="button" (click)="previousPage()" [disabled]="currentPage === 1">
+          Precedent
+        </button>
+        <span>Page {{ currentPage }} / {{ totalPages }}</span>
+        <button class="ghost-btn" type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">
+          Suivant
+        </button>
+      </div>
+    </section>
+  </div>
+</div>

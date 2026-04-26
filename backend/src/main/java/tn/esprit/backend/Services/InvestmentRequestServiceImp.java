@@ -107,6 +107,7 @@ public class InvestmentRequestServiceImp implements InvestmentRequestService {
                 break;
             case NEGOTIATION:
             case DUE_DILIGENCE:
+            case VERIFICATION_FINALE:
             case ACCEPTED:
                 request.setInvestmentStatus(InvestmentStatus.ACCEPTED);
                 break;

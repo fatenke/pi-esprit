@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { apiOrigin } from '../../../core/api-origin';
 import {
+  CheckoutSessionResponse,
+  ConfirmCheckoutPayload,
   CreateHoldingPayload,
   CreateMilestonePayload,
   HoldingRole,
   InvestmentHolding,
   InvestmentHoldingMilestone,
-  StripeConfig,
 } from '../models/investment-holding.model';
 
 @Injectable({
@@ -20,9 +21,9 @@ export class InvestmentHoldingService {
 
   constructor(private http: HttpClient) {}
 
-  createHolding(requestId: string, payload: CreateHoldingPayload, userId: string, role: HoldingRole): Observable<InvestmentHolding> {
-    return this.http.post<InvestmentHolding>(
-      `${this.baseUrl}/${requestId}/holding`,
+  createCheckoutSession(requestId: string, payload: CreateHoldingPayload, userId: string, role: HoldingRole): Observable<CheckoutSessionResponse> {
+    return this.http.post<CheckoutSessionResponse>(
+      `${this.baseUrl}/${requestId}/checkout-session`,
       payload,
       { headers: this.buildHeaders(userId, role) }
     );
@@ -38,14 +39,6 @@ export class InvestmentHoldingService {
   getHoldingByRequestId(requestId: string, userId: string, role: HoldingRole): Observable<InvestmentHolding> {
     return this.http.get<InvestmentHolding>(
       `${this.baseUrl}/request/${requestId}/holding`,
-      { headers: this.buildHeaders(userId, role) }
-    );
-  }
-
-  confirmPayment(holdingId: string, userId: string, role: HoldingRole): Observable<InvestmentHolding> {
-    return this.http.post<InvestmentHolding>(
-      `${this.baseUrl}/holding/${holdingId}/confirm-payment`,
-      {},
       { headers: this.buildHeaders(userId, role) }
     );
   }
@@ -106,8 +99,11 @@ export class InvestmentHoldingService {
     );
   }
 
-  getStripeConfig(): Observable<StripeConfig> {
-    return this.http.get<StripeConfig>(`${this.baseUrl}/stripe/config`);
+  confirmCheckout(payload: ConfirmCheckoutPayload): Observable<InvestmentHolding> {
+    return this.http.post<InvestmentHolding>(
+      `${this.baseUrl}/confirm-checkout`,
+      payload
+    );
   }
 
   private buildHeaders(userId: string, role: HoldingRole): HttpHeaders {

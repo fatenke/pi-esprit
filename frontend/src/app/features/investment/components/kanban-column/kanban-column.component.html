@@ -12,7 +12,7 @@
     [cdkDropListConnectedTo]="connectedToIds"
     (cdkDropListDropped)="onDropped($event)"
   >
-    <div class="empty" *ngIf="cards.length === 0">No deals</div>
+    <div class="empty" *ngIf="cards.length === 0">Aucun deal</div>
 
     <div class="card-wrapper" *ngFor="let card of cards; trackBy: trackById" cdkDrag [cdkDragData]="card">
       <app-deal-card [card]="card"></app-deal-card>

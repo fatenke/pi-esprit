@@ -1,35 +1,78 @@
 <div class="page">
-  <mat-toolbar color="primary" class="toolbar">
-    <mat-icon class="toolbar-icon">folder_special</mat-icon>
-    <span>Virtual Data Room</span>
-    <span class="spacer"></span>
-    <span class="room-pill" *ngIf="roomId">Room {{ roomId }}</span>
-  </mat-toolbar>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
 
   <div class="body">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Espace securise</div>
+        <h1>Data Room d investissement</h1>
+        <p>
+          Centralisez les documents sensibles, suivez les consultations et partagez les pieces du deal
+          dans un espace clair, confidentiel et structure.
+        </p>
+
+        <div class="hero-badges">
+          <span class="hero-badge">{{ ndaSigned ? 'NDA signe' : 'NDA requis' }}</span>
+          <span class="hero-badge">{{ totalDocuments }} document(s)</span>
+          <span class="hero-badge" *ngIf="ndaSigned">{{ selectedFolderLabel }}</span>
+        </div>
+      </div>
+
+      <div class="hero-stats">
+        <article class="stat-card">
+          <span class="stat-label">Acces</span>
+          <strong>{{ ndaSigned ? 'Debloque' : 'Verrouille' }}</strong>
+          <small>{{ ndaSigned ? 'Les dossiers sont consultables.' : 'Signature NDA necessaire.' }}</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Consultations</span>
+          <strong>{{ viewedCount }}</strong>
+          <small>Documents ouverts pendant cette session.</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Derniere activite</span>
+          <strong>{{ lastViewed ? (lastViewed.at | date : 'dd MMM, HH:mm') : 'Aucune' }}</strong>
+          <small>{{ lastViewed?.fileName || 'Aucun document consulte pour le moment.' }}</small>
+        </article>
+      </div>
+    </section>
+
     <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
 
-    <div class="nda-block" *ngIf="!loading && !ndaSigned">
+    <section class="locked-shell" *ngIf="!loading && !ndaSigned">
       <app-nda [busy]="ndaBusy" (sign)="onNdaSign()"></app-nda>
-    </div>
 
-    <div class="locked-hint" *ngIf="!loading && !ndaSigned">
-      <mat-icon>lock</mat-icon>
-      <p>Documents are hidden until the NDA is signed.</p>
-    </div>
+      <div class="locked-hint">
+        <mat-icon>lock</mat-icon>
+        <div>
+          <strong>Acces protege</strong>
+          <p>Les documents restent masques tant que l accord de confidentialite n a pas ete signe.</p>
+        </div>
+      </div>
+    </section>
 
     <div class="main-grid" *ngIf="!loading && ndaSigned">
-      <app-folder-list
-        [selected]="selectedFolder"
-        [counts]="folderCounts"
-        (selectedChange)="onFolderChange($event)"
-      ></app-folder-list>
+      <aside class="sidebar-panel">
+        <div class="sidebar-head">
+          <span class="sidebar-eyebrow">Navigation</span>
+          <h2>Dossiers</h2>
+          <p>Choisissez une categorie pour filtrer instantanement les documents.</p>
+        </div>
+
+        <app-folder-list
+          [selected]="selectedFolder"
+          [counts]="folderCounts"
+          (selectedChange)="onFolderChange($event)"
+        ></app-folder-list>
+      </aside>
 
       <section class="docs-panel">
         <div class="panel-head">
           <div>
-            <h2>{{ folderLabels[selectedFolder] }}</h2>
-            <p class="hint">{{ filteredDocuments.length }} document(s)</p>
+            <span class="panel-eyebrow">Documents disponibles</span>
+            <h2>{{ selectedFolderLabel }}</h2>
+            <p class="hint">{{ filteredDocuments.length }} document(s) dans cette categorie</p>
           </div>
           <div class="panel-actions">
             <input
@@ -46,7 +89,7 @@
               (click)="fileInput.click()"
             >
               <mat-icon>upload_file</mat-icon>
-              Upload
+              {{ uploadBusy ? 'Televersement...' : 'Ajouter un document' }}
             </button>
           </div>
         </div>
@@ -60,16 +103,27 @@
       </section>
 
       <aside class="analytics" aria-label="Session analytics">
-        <mat-card>
-          <mat-card-title>Activity</mat-card-title>
+        <mat-card class="analytics-card">
+          <mat-card-title>Activite de la session</mat-card-title>
           <mat-card-content>
-            <p><strong>Documents viewed (session)</strong>: {{ viewedCount }}</p>
-            <p *ngIf="lastViewed">
-              <strong>Last viewed</strong>: {{ lastViewed.fileName }}
-              <br />
-              <span class="muted">{{ lastViewed.at | date : 'short' }}</span>
+            <div class="analytics-row">
+              <span>Documents consultes</span>
+              <strong>{{ viewedCount }}</strong>
+            </div>
+            <div class="analytics-row">
+              <span>Dossier actif</span>
+              <strong>{{ selectedFolderLabel }}</strong>
+            </div>
+            <div class="analytics-row" *ngIf="lastViewed; else noLastViewed">
+              <span>Dernier document</span>
+              <strong>{{ lastViewed.fileName }}</strong>
+            </div>
+            <p class="muted" *ngIf="lastViewed">
+              Consulte le {{ lastViewed.at | date : 'dd MMM yyyy, HH:mm' }}
             </p>
-            <p *ngIf="!lastViewed" class="muted">No views yet this session.</p>
+            <ng-template #noLastViewed>
+              <p class="muted">Aucune consultation pour cette session.</p>
+            </ng-template>
           </mat-card-content>
         </mat-card>
       </aside>

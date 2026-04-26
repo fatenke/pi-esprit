@@ -8,6 +8,7 @@ import tn.esprit.backend.Entities.DocumentFile;
 public interface DataRoomService {
     DataRoomResponse getDataRoomById(String roomId);
     DataRoom createDataRoom(String startupId, String investorId, String dealId);
+    DataRoom ensureDataRoomForDeal(String dealId);
     void signNda(String roomId);
     void upload(String roomId, String folder, MultipartFile file);
     void affectDocToDataRoom(String docId,String roomId);

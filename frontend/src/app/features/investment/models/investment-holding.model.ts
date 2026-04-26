@@ -33,11 +33,13 @@ export interface InvestmentHolding {
   investmentRequestId: string;
   investorId: string;
   startupId: string;
-  amount: number;
-  currency: string;
+  amountTnd: number;
+  amountEur: number;
+  currencyDisplayed: string;
+  stripeCurrency: string;
   status: HoldingStatus;
+  stripeCheckoutSessionId?: string | null;
   stripePaymentIntentId?: string | null;
-  stripeClientSecret?: string | null;
   createdAt: string;
   fundedAt?: string | null;
   releasedAt?: string | null;
@@ -46,16 +48,22 @@ export interface InvestmentHolding {
 }
 
 export interface CreateHoldingPayload {
-  amount: number;
-  currency: string;
+  amountTnd: number;
+}
+
+export interface CheckoutSessionResponse {
+  holdingId: string;
+  amountTnd: number;
+  amountEur: number;
+  checkoutUrl: string;
+}
+
+export interface ConfirmCheckoutPayload {
+  sessionId: string;
 }
 
 export interface CreateMilestonePayload {
   title: string;
   amount: number;
   dueDate: string;
-}
-
-export interface StripeConfig {
-  publishableKey: string;
 }

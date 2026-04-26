@@ -2,13 +2,11 @@ package tn.esprit.backend.Services;
 
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
-import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.esprit.backend.config.StripeProperties;
-
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -16,38 +14,55 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     private final StripeProperties stripeProperties;
 
     @Override
-    public StripePaymentIntentData createPaymentIntent(Long amount, String currency, String requestId, String investorId, String startupId) {
+    public StripeCheckoutSessionData createCheckoutSession(long amountInCentsEur, String requestId, String investorId, String startupId) {
         try {
             Stripe.apiKey = stripeProperties.getSecretKey();
 
-            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount(amount)
-                    .setCurrency(currency.toLowerCase())
-                    .setAutomaticPaymentMethods(
-                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                    .setEnabled(true)
-                                    .build()
-                    )
+            SessionCreateParams params = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setSuccessUrl(stripeProperties.getSuccessUrl())
+                    .setCancelUrl(stripeProperties.getCancelUrl())
                     .putMetadata("investmentRequestId", requestId)
                     .putMetadata("investorId", investorId)
                     .putMetadata("startupId", startupId)
+                    .addLineItem(
+                            SessionCreateParams.LineItem.builder()
+                                    .setQuantity(1L)
+                                    .setPriceData(
+                                            SessionCreateParams.LineItem.PriceData.builder()
+                                                    .setCurrency("eur")
+                                                    .setUnitAmount(amountInCentsEur)
+                                                    .setProductData(
+                                                            SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                    .setName("Investment Holding")
+                                                                    .setDescription("Investment request " + requestId)
+                                                                    .build()
+                                                    )
+                                                    .build()
+                                    )
+                                    .build()
+                    )
                     .build();
 
-            PaymentIntent paymentIntent = PaymentIntent.create(params);
-            return new StripePaymentIntentData(paymentIntent.getId(), paymentIntent.getClientSecret());
+            Session session = Session.create(params);
+            return new StripeCheckoutSessionData(session.getId(), session.getUrl());
         } catch (StripeException e) {
-            throw new IllegalStateException("Unable to create Stripe test payment intent: " + e.getMessage(), e);
+            throw new IllegalStateException("Unable to create Stripe Checkout session: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public String getPaymentIntentStatus(String paymentIntentId) {
+    public StripeCheckoutSessionDetails getCheckoutSessionDetails(String sessionId) {
         try {
             Stripe.apiKey = stripeProperties.getSecretKey();
-            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
-            return paymentIntent.getStatus();
+            Session session = Session.retrieve(sessionId);
+            return new StripeCheckoutSessionDetails(
+                    session.getId(),
+                    session.getPaymentStatus(),
+                    session.getPaymentIntent()
+            );
         } catch (StripeException e) {
-            throw new IllegalStateException("Unable to verify Stripe payment intent: " + e.getMessage(), e);
+            throw new IllegalStateException("Unable to verify Stripe Checkout session: " + e.getMessage(), e);
         }
     }
 }

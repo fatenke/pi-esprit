@@ -26,4 +26,38 @@ export class FolderListComponent {
   countFor(f: DataRoomFolder): number {
     return this.counts?.[f] ?? 0;
   }
+
+  iconFor(f: DataRoomFolder): string {
+    switch (f) {
+      case 'FINANCIAL':
+        return 'monitoring';
+      case 'LEGAL':
+        return 'gavel';
+      case 'PRODUCT':
+        return 'deployed_code';
+      case 'TEAM':
+        return 'groups';
+      case 'MARKET':
+        return 'travel_explore';
+      default:
+        return 'folder';
+    }
+  }
+
+  hintFor(f: DataRoomFolder): string {
+    switch (f) {
+      case 'FINANCIAL':
+        return 'Bilans, projections et KPIs';
+      case 'LEGAL':
+        return 'Contrats, statuts et conformite';
+      case 'PRODUCT':
+        return 'Roadmap, demos et specs';
+      case 'TEAM':
+        return 'Organisation et recrutement';
+      case 'MARKET':
+        return 'Etudes, traction et concurrence';
+      default:
+        return '';
+    }
+  }
 }

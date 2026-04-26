@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.backend.DTO.DataRoomResponse;
 import tn.esprit.backend.Entities.DataRoom;
+import tn.esprit.backend.Entities.DealPipeline;
 import tn.esprit.backend.Entities.DocumentFile;
 import tn.esprit.backend.Repositories.DataRoomRepo;
+import tn.esprit.backend.Repositories.DealPipelineRepo;
 import tn.esprit.backend.Repositories.DocumentFileRepo;
 
 import java.time.LocalDateTime;
@@ -18,6 +20,7 @@ import java.util.List;
 public class DataRoomServiceImp implements DataRoomService {
     private final DataRoomRepo dataRoomRepo;
     private final DocumentFileRepo documentFileRepo;
+    private final DealPipelineRepo dealPipelineRepo;
     private final GridFsStorageService gridFsStorageService;
 
     public DataRoom createDataRoom(String startupId, String investorId, String dealId) {
@@ -29,6 +32,20 @@ public class DataRoomServiceImp implements DataRoomService {
         room.setStatus("ACTIVE");
         room.setCreatedAt(LocalDateTime.now());
         return dataRoomRepo.save(room);
+    }
+
+    @Override
+    public DataRoom ensureDataRoomForDeal(String dealId) {
+        if (dealId == null || dealId.isBlank()) {
+            throw new IllegalArgumentException("dealId is required");
+        }
+
+        return dataRoomRepo.findByDealId(dealId)
+                .orElseGet(() -> {
+                    DealPipeline deal = dealPipelineRepo.findById(dealId)
+                            .orElseThrow(() -> new RuntimeException("Deal not found"));
+                    return createDataRoom(deal.getStartupId(), deal.getInvestorId(), deal.getId());
+                });
     }
 
     @Override
