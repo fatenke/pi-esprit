@@ -8,6 +8,7 @@ import tn.esprit.backend.DTO.DataRoomResponse;
 import tn.esprit.backend.Entities.DataRoom;
 import tn.esprit.backend.Entities.DealPipeline;
 import tn.esprit.backend.Entities.DocumentFile;
+import tn.esprit.backend.enums.NdaStatus;
 import tn.esprit.backend.Repositories.DataRoomRepo;
 import tn.esprit.backend.Repositories.DealPipelineRepo;
 import tn.esprit.backend.Repositories.DocumentFileRepo;
@@ -22,6 +23,7 @@ public class DataRoomServiceImp implements DataRoomService {
     private final DocumentFileRepo documentFileRepo;
     private final DealPipelineRepo dealPipelineRepo;
     private final GridFsStorageService gridFsStorageService;
+    private final NdaService ndaService;
 
     public DataRoom createDataRoom(String startupId, String investorId, String dealId) {
         DataRoom room = new DataRoom();
@@ -59,30 +61,25 @@ public class DataRoomServiceImp implements DataRoomService {
     }
 
     @Override
-    public DataRoomResponse getDataRoomById(String roomId) {
+    public DataRoomResponse getDataRoomById(String roomId, RequestActor actor) {
         DataRoom room = dataRoomRepo.findById(roomId)
                 .orElseThrow();
 
-        List<DocumentFile> docs = documentFileRepo.findByRoomId(roomId);
+        boolean canAccessDocuments = ndaService.canAccessDataRoom(roomId, actor);
+        List<DocumentFile> docs = canAccessDocuments ? documentFileRepo.findByRoomId(roomId) : List.of();
 
         return DataRoomResponse.builder()
                 .roomId(room.getId())
-                .ndaSigned(room.isNdaSigned())
+                .ndaSigned(ndaService.createOrGetNda(roomId).getStatus() == NdaStatus.SIGNED)
                 .documents(docs)
                 .build();
     }
 
     @Override
-    public void signNda(String roomId) {
-        DataRoom room = dataRoomRepo.findById(roomId)
-                .orElseThrow();
-
-        room.setNdaSigned(true);
-        dataRoomRepo.save(room);
-    }
-
-    @Override
-    public void upload(String roomId, String folder, MultipartFile file) {
+    public void upload(String roomId, String folder, MultipartFile file, RequestActor actor) {
+        if (!ndaService.canAccessDataRoom(roomId, actor)) {
+            throw new SecurityException("You must sign the NDA before accessing data room documents.");
+        }
         dataRoomRepo.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Data room not found"));
 
@@ -110,7 +107,10 @@ public class DataRoomServiceImp implements DataRoomService {
     }
 
     @Override
-    public DocumentFile getDocument(String roomId, String documentId) {
+    public DocumentFile getDocument(String roomId, String documentId, RequestActor actor) {
+        if (!ndaService.canAccessDataRoom(roomId, actor)) {
+            throw new SecurityException("You must sign the NDA before accessing data room documents.");
+        }
         dataRoomRepo.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Data room not found"));
 

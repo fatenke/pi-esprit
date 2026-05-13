@@ -2,7 +2,7 @@ package tn.esprit.backend.DTO;
 
 import lombok.Builder;
 import lombok.Data;
-import tn.esprit.backend.Entities.InvestmentMilestoneStatus;
+import tn.esprit.backend.enums.InvestmentMilestoneStatus;
 
 import java.time.LocalDateTime;
 

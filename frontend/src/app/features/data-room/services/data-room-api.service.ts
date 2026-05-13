@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { apiOrigin } from '../../../core/api-origin';
@@ -52,14 +52,17 @@ export class DataRoomApiService {
 
   getDataRoom(roomId: string): Observable<DataRoomState> {
     return this.http
-      .get<DataRoomApiEnvelope>(`${this.base}/${encodeURIComponent(roomId)}`)
+      .get<DataRoomApiEnvelope>(`${this.base}/${encodeURIComponent(roomId)}`, {
+        headers: this.actorHeaders(),
+      })
       .pipe(map((raw) => this.normalize(roomId, raw)));
   }
 
   ensureRoomForDeal(dealId: string): Observable<{ id: string }> {
     return this.http.post<DataRoomApiEnvelope>(
       `${this.base}/deal/${encodeURIComponent(dealId)}/ensure`,
-      {}
+      {},
+      { headers: this.actorHeaders() }
     ).pipe(
       map((raw) => ({ id: String(raw.id ?? raw.roomId ?? '') }))
     );
@@ -70,15 +73,25 @@ export class DataRoomApiService {
     fd.append('file', file, file.name);
     fd.append('roomId', roomId);
     fd.append('folder', folder);
-    return this.http.post(`${this.base}/upload`, fd);
-  }
-
-  signNda(roomId: string): Observable<unknown> {
-    return this.http.post(`${this.ndaBase}/sign`, { roomId });
+    return this.http.post(`${this.base}/upload`, fd, { headers: this.actorHeaders() });
   }
 
   logDocumentView(roomId: string, documentId: string): Observable<unknown> {
     return this.http.post(`${this.logBase}/view`, { roomId, documentId });
+  }
+
+  private actorHeaders(): HttpHeaders {
+    const role = this.safeStorageGet('app.currentUserRole') || 'INVESTOR';
+    const userId = this.safeStorageGet('app.currentUserId') || 'dev-investor';
+    return new HttpHeaders({
+      'X-User-Id': userId,
+      'X-User-Role': role,
+    });
+  }
+
+  private safeStorageGet(key: string): string | null {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage.getItem(key);
   }
 
   private normalize(roomId: string, raw: DataRoomApiEnvelope): DataRoomState {

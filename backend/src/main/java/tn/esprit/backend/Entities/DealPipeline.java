@@ -2,8 +2,8 @@ package tn.esprit.backend.Entities;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import tn.esprit.backend.enums.DealStatus;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -21,13 +21,14 @@ public class DealPipeline {
     @Id
     private String id;
     private String investorId;
-    //@Indexed(unique = true)
-    private String requestId;       // InvestmentRequest
+    private String requestId;
     private String startupId;
     private DealStatus status;
-    private int columnOrder;         // position dans la colonne
+    private int columnOrder;
     private List<PipelineNote> privateNotes;
-    //private List<SharedDocument> documents;
+    private Boolean archivedByInvestor = false;
+    private Boolean archivedByStartup = false;
+    private LocalDateTime closedAt;
     private String nextAction;
     private LocalDateTime nextActionDate;
     private LocalDateTime statusChangedAt;

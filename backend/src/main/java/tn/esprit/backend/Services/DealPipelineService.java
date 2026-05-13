@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.backend.DTO.DealCard;
 import tn.esprit.backend.DTO.KanbanBoard;
 import tn.esprit.backend.Entities.DealPipeline;
-import tn.esprit.backend.Entities.DealStatus;
+import tn.esprit.backend.enums.DealStatus;
 import tn.esprit.backend.Entities.StatusHistory;
 import tn.esprit.backend.Repositories.DealPipelineRepo;
 

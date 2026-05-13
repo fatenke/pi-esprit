@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.backend.Entities.DealPipeline;
-import tn.esprit.backend.Entities.DealStatus;
+import tn.esprit.backend.enums.DealStatus;
 import tn.esprit.backend.Entities.InvestmentRequest;
-import tn.esprit.backend.Entities.InvestmentStatus;
+import tn.esprit.backend.enums.InvestmentStatus;
 import tn.esprit.backend.Repositories.DealPipelineRepo;
 import tn.esprit.backend.Repositories.InvestmentRequestRepo;
 

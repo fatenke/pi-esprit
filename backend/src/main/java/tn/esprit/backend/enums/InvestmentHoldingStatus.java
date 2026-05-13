@@ -1,4 +1,4 @@
-package tn.esprit.backend.Entities;
+package tn.esprit.backend.enums;
 
 public enum InvestmentHoldingStatus {
     CREATED,

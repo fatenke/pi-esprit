@@ -15,6 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DealCardComponent } from './components/deal-card/deal-card.component';
 import { KanbanColumnComponent } from './components/kanban-column/kanban-column.component';
 import { InvestmentHoldingComponent } from './components/investment-holding/investment-holding.component';
+import { NextBestActionCardComponent } from './components/next-best-action-card/next-best-action-card.component';
 import { RequestFormComponent } from './components/request-form/request-form.component';
 import { StartupListComponent } from './components/startup-list/startup-list.component';
 import { RequestManagementComponent } from './components/request-management/request-management.component';
@@ -27,6 +28,7 @@ import { RequestManagementComponent } from './components/request-management/requ
     KanbanColumnComponent,
     InvestmentHoldingComponent,
     DealCardComponent,
+    NextBestActionCardComponent,
     RequestFormComponent,
     StartupListComponent,
     RequestManagementComponent,

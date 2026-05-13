@@ -38,10 +38,17 @@
       </div>
     </section>
 
-    <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+    <mat-progress-bar *ngIf="loading || ndaLoading" mode="indeterminate"></mat-progress-bar>
 
-    <section class="locked-shell" *ngIf="!loading && !ndaSigned">
-      <app-nda [busy]="ndaBusy" (sign)="onNdaSign()"></app-nda>
+    <section class="locked-shell" *ngIf="!loading && !ndaLoading && !ndaSigned">
+      <app-nda-signature
+        [agreement]="ndaAgreement"
+        [busy]="ndaBusy"
+        (submitSignature)="onSubmitNda($event)"
+        (accessRequested)="onNdaSign()"
+      ></app-nda-signature>
+
+      <div class="state error" *ngIf="ndaError">{{ ndaError }}</div>
 
       <div class="locked-hint">
         <mat-icon>lock</mat-icon>
@@ -52,7 +59,7 @@
       </div>
     </section>
 
-    <div class="main-grid" *ngIf="!loading && ndaSigned">
+    <div class="main-grid" *ngIf="!loading && !ndaLoading && ndaSigned">
       <aside class="sidebar-panel">
         <div class="sidebar-head">
           <span class="sidebar-eyebrow">Navigation</span>
@@ -124,6 +131,10 @@
             <ng-template #noLastViewed>
               <p class="muted">Aucune consultation pour cette session.</p>
             </ng-template>
+            <button mat-stroked-button color="primary" type="button" class="certificate-btn" (click)="openCertificate()">
+              <mat-icon>verified</mat-icon>
+              Telecharger le certificat NDA
+            </button>
           </mat-card-content>
         </mat-card>
       </aside>

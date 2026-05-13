@@ -154,6 +154,16 @@
   margin-top: 10px;
 }
 
+.state.error {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(254, 242, 242, 0.96);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.14);
+}
+
 .locked-hint {
   display: flex;
   align-items: flex-start;
@@ -271,6 +281,11 @@
   color: #64748b;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.certificate-btn {
+  margin-top: 16px;
+  border-radius: 14px;
 }
 
 @media (max-width: 1120px) {

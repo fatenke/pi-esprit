@@ -8,8 +8,11 @@ import {
   DATA_ROOM_FOLDERS,
   DataRoomDocument,
   DataRoomFolder,
+  NdaAgreement,
+  SignNdaPayload,
 } from '../../models/data-room.models';
 import { DataRoomApiService } from '../../services/data-room-api.service';
+import { NdaService } from '../../services/nda.service';
 
 @Component({
   selector: 'app-data-room',
@@ -19,10 +22,13 @@ import { DataRoomApiService } from '../../services/data-room-api.service';
 export class DataRoomComponent implements OnInit, OnDestroy {
   roomId = '';
   loading = true;
+  ndaLoading = true;
   ndaBusy = false;
   uploadBusy = false;
+  ndaError = '';
 
   ndaSigned = false;
+  ndaAgreement: NdaAgreement | null = null;
   allDocuments: DataRoomDocument[] = [];
   selectedFolder: DataRoomFolder = 'FINANCIAL';
 
@@ -38,6 +44,7 @@ export class DataRoomComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private api: DataRoomApiService,
+    private ndaService: NdaService,
     private snack: MatSnackBar
   ) {}
 
@@ -47,7 +54,7 @@ export class DataRoomComponent implements OnInit, OnDestroy {
         const id = pm.get('roomId');
         if (id) {
           this.roomId = id;
-          this.loadRoom();
+          this.loadNda();
         }
       })
     );
@@ -103,20 +110,7 @@ export class DataRoomComponent implements OnInit, OnDestroy {
   }
 
   onNdaSign(): void {
-    this.ndaBusy = true;
-    this.sub.add(
-      this.api.signNda(this.roomId).subscribe({
-        next: () => {
-          this.ndaBusy = false;
-          this.snack.open('NDA signe avec succes', 'OK', { duration: 3000 });
-          this.loadRoom(true);
-        },
-        error: () => {
-          this.ndaBusy = false;
-          this.snack.open('Echec de la signature du NDA', 'Fermer', { duration: 4000 });
-        },
-      })
-    );
+    this.loadRoom();
   }
 
   onFolderChange(f: DataRoomFolder): void {
@@ -181,5 +175,73 @@ export class DataRoomComponent implements OnInit, OnDestroy {
   private downloadUrl(doc: DataRoomDocument): string {
     if (doc.downloadUrl) return doc.downloadUrl;
     return `${apiOrigin()}/api/data-room/${encodeURIComponent(this.roomId)}/documents/${encodeURIComponent(doc.id)}/download`;
+  }
+
+  onSubmitNda(payload: SignNdaPayload): void {
+    this.ndaBusy = true;
+    this.ndaError = '';
+    this.sub.add(
+      this.ndaService.signNda(this.roomId, payload).subscribe({
+        next: () => {
+          this.ndaBusy = false;
+          this.snack.open('NDA signe avec succes', 'OK', { duration: 3000 });
+          this.loadNda(true);
+        },
+        error: (err) => {
+          this.ndaBusy = false;
+          this.ndaError = err?.error?.error ?? 'Echec de la signature du NDA.';
+        },
+      })
+    );
+  }
+
+  openCertificate(): void {
+    this.sub.add(
+      this.ndaService.getCertificate(this.roomId).subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `nda-certificate-${this.roomId}.txt`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.snack.open('Impossible de recuperer le certificat NDA', 'Fermer', { duration: 4000 });
+        },
+      })
+    );
+  }
+
+  private loadNda(silent = false): void {
+    if (!this.roomId) return;
+    if (!silent) {
+      this.loading = true;
+      this.ndaLoading = true;
+    }
+
+    this.sub.add(
+      this.ndaService.getNda(this.roomId).subscribe({
+        next: (agreement) => {
+          this.ndaAgreement = agreement;
+          this.ndaSigned = agreement.status === 'SIGNED';
+          this.ndaError = '';
+          this.ndaLoading = false;
+
+          if (this.ndaSigned) {
+            this.loadRoom(true);
+            return;
+          }
+
+          this.loading = false;
+          this.allDocuments = [];
+        },
+        error: (err) => {
+          this.ndaLoading = false;
+          this.loading = false;
+          this.ndaError = err?.error?.error ?? 'Impossible de charger le NDA.';
+        },
+      })
+    );
   }
 }

@@ -1,0 +1,65 @@
+<section class="signature-shell" *ngIf="agreement as nda">
+  <div class="signature-card">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Accord de confidentialite</div>
+        <h2>NDA avant acces a la Data Room</h2>
+        <p>
+          L investisseur doit accepter le NDA et laisser une preuve de signature virtuelle
+          avant de consulter les documents confidentiels.
+        </p>
+      </div>
+      <span class="status-pill" [attr.data-status]="nda.status">
+        {{ nda.status === 'SIGNED' ? 'NDA signe' : nda.status === 'REJECTED' ? 'Refuse' : 'En attente' }}
+      </span>
+    </div>
+
+    <div class="content-box">
+      <div class="content-head">
+        <strong>Texte du NDA</strong>
+        <span>Hash du NDA: {{ nda.ndaHash | slice:0:16 }}...</span>
+      </div>
+      <div class="nda-content">{{ nda.ndaContent }}</div>
+    </div>
+
+    <div class="signed-banner" *ngIf="isSigned">
+      <div>
+        <strong>Le NDA est deja signe.</strong>
+        <p>Vous pouvez maintenant acceder aux documents confidentiels de la Data Room.</p>
+      </div>
+      <button type="button" class="primary-btn" (click)="accessRequested.emit()">
+        Acceder a la Data Room
+      </button>
+    </div>
+
+    <ng-container *ngIf="!isSigned">
+      <label class="terms-check">
+        <input type="checkbox" [(ngModel)]="acceptedTerms" />
+        <span>J ai lu et j accepte les conditions du NDA</span>
+      </label>
+
+      <div class="form-grid">
+        <label class="field full">
+          <span>Nom complet du signataire</span>
+          <input [(ngModel)]="signerFullName" placeholder="Ex: Amin Ben Ali" />
+        </label>
+      </div>
+
+      <div class="draw-shell">
+        <div class="canvas-head">
+          <span>Dessinez votre signature</span>
+          <button type="button" class="ghost-btn" (click)="clearSignature()">Effacer signature</button>
+        </div>
+        <canvas #signatureCanvas class="signature-canvas"></canvas>
+      </div>
+
+      <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+      <div class="actions">
+        <button type="button" class="primary-btn" [disabled]="!canSubmit" (click)="sign()">
+          {{ busy ? 'Signature en cours...' : 'Signer et acceder a la Data Room' }}
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</section>

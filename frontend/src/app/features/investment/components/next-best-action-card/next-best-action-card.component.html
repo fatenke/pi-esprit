@@ -1,0 +1,28 @@
+<article class="action-card" [attr.data-priority]="action.priority" [attr.data-status]="action.status">
+  <div class="action-top">
+    <div class="eyebrow">
+      <span class="pill ai" *ngIf="action.aiGenerated">IA generee</span>
+      <span class="pill role">{{ actorLabel }}</span>
+      <span class="pill status">{{ statusLabel }}</span>
+    </div>
+    <span class="priority">{{ priorityLabel }}</span>
+  </div>
+
+  <h4>{{ action.title }}</h4>
+  <p class="description">{{ action.description }}</p>
+
+  <div class="reason-block">
+    <span class="reason-label">Pourquoi</span>
+    <p>{{ action.reason }}</p>
+  </div>
+
+  <div class="meta">
+    <span *ngIf="action.dueDate">A faire avant le {{ action.dueDate | date:'dd/MM/yyyy' }}</span>
+    <span *ngIf="!action.dueDate">A planifier rapidement</span>
+  </div>
+
+  <div class="card-actions" *ngIf="action.status === 'PENDING'">
+    <button type="button" class="primary-btn" (click)="markDone()" [disabled]="busy">Marquer comme fait</button>
+    <button type="button" class="ghost-btn" (click)="markIgnore()" [disabled]="busy">Ignorer</button>
+  </div>
+</article>

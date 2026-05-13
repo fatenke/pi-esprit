@@ -1,8 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DataRoomRoutingModule } from './data-room-routing.module';
 import { DataRoomComponent } from './components/data-room/data-room.component';
 import { NdaComponent } from './components/nda/nda.component';
+import { NdaSignatureComponent } from './components/nda-signature/nda-signature.component';
 import { FolderListComponent } from './components/folder-list/folder-list.component';
 import { DocumentListComponent } from './components/document-list/document-list.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -20,11 +22,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   declarations: [
     DataRoomComponent,
     NdaComponent,
+    NdaSignatureComponent,
     FolderListComponent,
     DocumentListComponent,
   ],
   imports: [
     CommonModule,
+    FormsModule,
     DataRoomRoutingModule,
     MatToolbarModule,
     MatIconModule,

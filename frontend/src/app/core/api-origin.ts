@@ -1,8 +1,16 @@
 /**
  * Base URL for API calls.
- * - Browser: '' so requests stay same-origin (`/api/...`) and `ng serve` proxy applies.
- * - SSR / prerender (Node): absolute URL because `fetch()` requires it server-side.
+ * - Browser: keep requests same-origin so the ingress can route `/api/...` without CORS.
+ * - SSR / Node: allow an explicit API origin, otherwise fall back to the Kubernetes service.
  */
 export function apiOrigin(): string {
-  return typeof document !== 'undefined' ? '' : 'http://localhost:8080';
+  if (typeof document !== 'undefined') {
+    return '';
+  }
+
+  if (typeof process !== 'undefined' && process.env?.['API_ORIGIN']) {
+    return process.env['API_ORIGIN'];
+  }
+
+  return 'http://api-gateway:8091';
 }

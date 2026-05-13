@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import tn.esprit.backend.Entities.DealStatus;
+import tn.esprit.backend.enums.DealStatus;
 
 import java.util.List;
 import java.util.Map;

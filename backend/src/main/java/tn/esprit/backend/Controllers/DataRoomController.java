@@ -13,6 +13,8 @@ import tn.esprit.backend.Entities.DataRoom;
 import tn.esprit.backend.Entities.DocumentFile;
 import tn.esprit.backend.Services.DataRoomService;
 import tn.esprit.backend.Services.GridFsStorageService;
+import tn.esprit.backend.Services.RequestActor;
+import tn.esprit.backend.Services.UserRole;
 
 import java.io.IOException;
 
@@ -24,8 +26,12 @@ public class DataRoomController {
     private final GridFsStorageService gridFsStorageService;
 
     @GetMapping("/{id}")
-    public DataRoomResponse get(@PathVariable String id) {
-        return dataRoomService.getDataRoomById(id);
+    public DataRoomResponse get(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role
+    ) {
+        return dataRoomService.getDataRoomById(id, actor(userId, role));
     }
 
     @PostMapping("/add")
@@ -42,33 +48,40 @@ public class DataRoomController {
     public void upload(
             @RequestParam String roomId,
             @RequestParam String folder,
-            @RequestParam MultipartFile file
+            @RequestParam MultipartFile file,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role
     ) {
-        dataRoomService.upload(roomId, folder, file);
+        dataRoomService.upload(roomId, folder, file, actor(userId, role));
     }
 
     @GetMapping("/{roomId}/documents/{documentId}/view")
     public ResponseEntity<Resource> viewDocument(
             @PathVariable String roomId,
-            @PathVariable String documentId
+            @PathVariable String documentId,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role
     ) throws IOException {
-        return serveDocument(roomId, documentId, true);
+        return serveDocument(roomId, documentId, true, actor(userId, role));
     }
 
     @GetMapping("/{roomId}/documents/{documentId}/download")
     public ResponseEntity<Resource> downloadDocument(
             @PathVariable String roomId,
-            @PathVariable String documentId
+            @PathVariable String documentId,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role
     ) throws IOException {
-        return serveDocument(roomId, documentId, false);
+        return serveDocument(roomId, documentId, false, actor(userId, role));
     }
 
     private ResponseEntity<Resource> serveDocument(
             String roomId,
             String documentId,
-            boolean inline
+            boolean inline,
+            RequestActor actor
     ) throws IOException {
-        DocumentFile document = dataRoomService.getDocument(roomId, documentId);
+        DocumentFile document = dataRoomService.getDocument(roomId, documentId, actor);
         if (document.getStorageId() == null || document.getStorageId().isBlank()) {
             return ResponseEntity.notFound().build();
         }
@@ -92,5 +105,11 @@ public class DataRoomController {
                         disposition + "; filename=\"" + document.getFileName() + "\""
                 )
                 .body(resource);
+    }
+
+    private RequestActor actor(String userId, String role) {
+        String resolvedRole = role == null || role.isBlank() ? "INVESTOR" : role.trim().toUpperCase();
+        String resolvedUser = userId == null || userId.isBlank() ? "dev-investor" : userId.trim();
+        return new RequestActor(resolvedUser, UserRole.valueOf(resolvedRole));
     }
 }

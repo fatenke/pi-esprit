@@ -1,11 +1,10 @@
 package tn.esprit.backend.Services;
 
-import tn.esprit.backend.Entities.DealStatus;
+import tn.esprit.backend.enums.DealStatus;
 import tn.esprit.backend.Entities.InvestmentRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface InvestmentRequestService {
     InvestmentRequest getInvestmentRequest(String irId);

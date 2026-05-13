@@ -2,7 +2,7 @@ package tn.esprit.backend.DTO;
 
 import lombok.Builder;
 import lombok.Data;
-import tn.esprit.backend.Entities.InvestmentHoldingStatus;
+import tn.esprit.backend.enums.InvestmentHoldingStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

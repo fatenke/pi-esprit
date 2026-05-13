@@ -1,8 +1,7 @@
 package tn.esprit.backend.DTO;
 
 import lombok.Data;
-import org.jetbrains.annotations.NotNull;
-import tn.esprit.backend.Entities.DealStatus;
+import tn.esprit.backend.enums.DealStatus;
 
 @Data
 public class MoveCardRequest {

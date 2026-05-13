@@ -2,7 +2,7 @@ package tn.esprit.backend.Repositories;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import tn.esprit.backend.Entities.DealPipeline;
-import tn.esprit.backend.Entities.DealStatus;
+import tn.esprit.backend.enums.DealStatus;
 
 import java.util.List;
 

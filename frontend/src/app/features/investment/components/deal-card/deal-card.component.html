@@ -45,20 +45,16 @@
 
   <div class="details" *ngIf="expanded">
     <div class="detail-row">
-      <span class="detail-label">ID du deal</span>
-      <span class="detail-value">{{ card.id }}</span>
-    </div>
-    <div class="detail-row">
       <span class="detail-label">Startup</span>
-      <span class="detail-value">{{ card.startupName || card.startupId || 'N/A' }}</span>
+      <span class="detail-value">{{ card.startupName || 'N/A' }}</span>
     </div>
     <div class="detail-row">
       <span class="detail-label">Secteur</span>
       <span class="detail-value">{{ card.startupSector || 'N/A' }}</span>
     </div>
     <div class="detail-row">
-      <span class="detail-label">ID de la demande</span>
-      <span class="detail-value">{{ card.requestId || 'N/A' }}</span>
+      <span class="detail-label">Statut du deal</span>
+      <span class="detail-value">{{ statusLabel }}</span>
     </div>
     <div class="detail-row">
       <span class="detail-label">Ticket propose</span>
@@ -76,5 +72,39 @@
       <span class="detail-label">Ordre dans la colonne</span>
       <span class="detail-value">{{ card.columnOrder ?? 0 }}</span>
     </div>
+
+    <section class="ai-panel">
+      <div class="ai-panel-top">
+        <div>
+          <span class="ai-kicker">Next Best Action</span>
+          <h4>Recommandation IA</h4>
+          <p>Une prochaine action operationnelle concrete pour faire avancer ce deal.</p>
+        </div>
+        <button
+          type="button"
+          class="details-btn ai-btn"
+          (click)="generateRecommendation($event)"
+          [disabled]="generating || !card.requestId"
+        >
+          {{ generating ? 'Analyse IA du deal en cours...' : 'Generer recommandation IA' }}
+        </button>
+      </div>
+
+      <div class="ai-state" *ngIf="actionsLoading">Chargement des recommandations...</div>
+      <div class="ai-state error" *ngIf="actionsError">{{ actionsError }}</div>
+      <div class="ai-state" *ngIf="!actionsLoading && !actionsError && actions.length === 0">
+        Aucune recommandation disponible pour le moment.
+      </div>
+
+      <div class="ai-list" *ngIf="!actionsLoading && actions.length > 0">
+        <app-next-best-action-card
+          *ngFor="let action of actions"
+          [action]="action"
+          [busy]="actionUpdateLoading"
+          (done)="markDone($event)"
+          (ignore)="ignoreAction($event)"
+        ></app-next-best-action-card>
+      </div>
+    </section>
   </div>
 </mat-card>

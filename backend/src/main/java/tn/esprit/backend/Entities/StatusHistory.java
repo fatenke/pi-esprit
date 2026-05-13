@@ -2,6 +2,7 @@ package tn.esprit.backend.Entities;
 
 import lombok.Builder;
 import lombok.Data;
+import tn.esprit.backend.enums.DealStatus;
 
 import java.time.LocalDateTime;
 
